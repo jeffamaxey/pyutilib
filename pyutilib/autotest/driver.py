@@ -35,9 +35,7 @@ except:
 
 
 def _str(x):
-    if isinstance(x, basestring):
-        return str(x)
-    return x
+    return str(x) if isinstance(x, basestring) else x
 
 
 def validate_test_config(suite):
@@ -46,42 +44,40 @@ def validate_test_config(suite):
             "Empty suite indicates problem processing suite configuration")
     #
     tmp = set(suite.keys())
-    if not tmp.issubset(
-            set(['python', 'solvers', 'problems', 'suites', 'driver'])):
-        raise IOError("Unexpected test sections: " + str(suite.keys()))
+    if not tmp.issubset({'python', 'solvers', 'problems', 'suites', 'driver'}):
+        raise IOError(f"Unexpected test sections: {str(suite.keys())}")
     #
-    if 'python' in suite:
-        if not type(suite['python']) is list:
-            raise IOError("Expected list of Python expressions")
+    if 'python' in suite and type(suite['python']) is not list:
+        raise IOError("Expected list of Python expressions")
     #
     if 'solvers' in suite:
-        if not type(suite['solvers']) is dict:
+        if type(suite['solvers']) is not dict:
             raise IOError("Expected dictionary of solvers")
         for key in suite['solvers']:
             if suite['solvers'][key] is None:
                 suite['solvers'][key] = {}
-            elif not type(suite['solvers'][key]) is dict:
+            elif type(suite['solvers'][key]) is not dict:
                 raise IOError(
-                    "Expected solvers to have a dictionary of options: %s" %
-                    str(suite))
+                    f"Expected solvers to have a dictionary of options: {str(suite)}"
+                )
     #
     if 'problems' in suite:
-        if not type(suite['problems']) is dict:
+        if type(suite['problems']) is not dict:
             raise IOError("Expected dictionary of problems")
         for key in suite['problems']:
             if suite['problems'][key] is None:
                 suite['problems'][key] = {}
-            elif not type(suite['problems'][key]) is dict:
+            elif type(suite['problems'][key]) is not dict:
                 raise IOError(
                     "Expected problems to have a dictionary of options")
     #
     if 'suites' in suite:
-        if not type(suite['suites']) is dict:
+        if type(suite['suites']) is not dict:
             raise IOError("Expected dictionary of suites")
         for key in suite['suites']:
             if suite['suites'][key] is None:
                 suite['suites'][key] = {}
-            elif not type(suite['suites'][key]) is dict:
+            elif type(suite['suites'][key]) is not dict:
                 raise IOError("Expected suites to have a dictionary of options")
 
 
@@ -107,19 +103,19 @@ def create_test_suites(filename=None, config=None, _globals=None, options=None):
                 if cat != '':
                     options.categories.add(cat.strip())
     #
-    if not filename is None:
+    if filename is not None:
         if options.currdir is None:
             options.currdir = dirname(abspath(filename)) + os.sep
         #
         ep = ExtensionPoint(plugins.ITestParser)
         ftype = os.path.splitext(filename)[1]
-        if not ftype == '':
+        if ftype != '':
             ftype = ftype[1:]
         service = ep.service(ftype)
         if service is None:
             raise IOError(
-                "Unknown file type.  Cannot load test configuration from file '%s'"
-                % filename)
+                f"Unknown file type.  Cannot load test configuration from file '{filename}'"
+            )
         config = service.load_test_config(filename)
     #service.print_test_config(config)
     validate_test_config(config)
@@ -131,14 +127,14 @@ def create_test_suites(filename=None, config=None, _globals=None, options=None):
             exec(item, _globals)
         except Exception:
             err = sys.exc_info()[1]
-            print("ERROR executing '%s'" % item)
-            print("  Exception: %s" % str(err))
+            print(f"ERROR executing '{item}'")
+            print(f"  Exception: {str(err)}")
     #
     # Create test driver, which is put in the global namespace
     #
     driver = plugins.TestDriverFactory(config['driver'])
     if driver is None:
-        raise IOError("Unexpected test driver '%s'" % config['driver'])
+        raise IOError(f"Unexpected test driver '{config['driver']}'")
     _globals["test_driver"] = driver
     #
     # Generate suite
@@ -165,8 +161,8 @@ def create_test_suite(suite, config, _globals, options):
     #
     if suite in _globals:
         raise IOError(
-            "Cannot create suite '%s' since there is another symbol with that name in the global namespace!"
-            % suite)
+            f"Cannot create suite '{suite}' since there is another symbol with that name in the global namespace!"
+        )
 
     def setUpClassFn(cls):
         options = cls._options[None]
@@ -194,7 +190,7 @@ def create_test_suite(suite, config, _globals, options):
     for solver, problem, item in tests:
         ##sname = solver
         if options.testname_format is None:
-            test_name = solver + "_" + problem
+            test_name = f"{solver}_{problem}"
         else:
             test_name = options.testname_format % (solver, problem)
         #
@@ -210,18 +206,18 @@ def create_test_suite(suite, config, _globals, options):
         _options = Options()
         #
         problem_options = config['suites'][suite]['problems'][problem]
-        if not problem_options is None and 'problem' in problem_options:
+        if problem_options is not None and 'problem' in problem_options:
             _problem = problem_options['problem']
         else:
             _problem = problem
         for attr, value in config['problems'].get(_problem, {}).items():
             _options[attr] = _str(value)
-        if not problem_options is None:
+        if problem_options is not None:
             for attr, value in problem_options.items():
                 _options[attr] = _str(value)
         #
         solver_options = config['suites'][suite]['solvers'][solver]
-        if not solver_options is None and 'solver' in solver_options:
+        if solver_options is not None and 'solver' in solver_options:
             _solver = solver_options['solver']
         else:
             _solver = solver
@@ -230,7 +226,7 @@ def create_test_suite(suite, config, _globals, options):
             _options[attr] = _str(value)
             if attr == 'name':
                 _name = value
-        if not solver_options is None:
+        if solver_options is not None:
             for attr, value in solver_options.items():
                 _options[attr] = _str(value)
         #
@@ -396,51 +392,45 @@ Examples:
     #
     # Process the --help-tests option
     #
-    if _options.help_tests and not _globals is None:
+    if _options.help_tests and _globals is not None:
         suite = _globals.get(_options.help_tests, None)
-        if not type(suite) is type:
-            print("Test suite '%s' not found!" % str(_options.help_tests))
+        if type(suite) is not type:
+            print(f"Test suite '{str(_options.help_tests)}' not found!")
             return cleanup(_globals, suites)
-        tests = []
-        for item in dir(suite):
-            if item.startswith('test'):
-                tests.append(item)
+        tests = [item for item in dir(suite) if item.startswith('test')]
         print("")
-        if len(tests) > 0:
-            print("Tests defined in test suite '%s':" % _options.help_tests)
+        if tests:
+            print(f"Tests defined in test suite '{_options.help_tests}':")
             for tmp in sorted(tests):
-                print("    " + tmp)
+                print(f"    {tmp}")
         else:
-            print("No tests defined in test suite '%s':" % _options.help_tests)
+            print(f"No tests defined in test suite '{_options.help_tests}':")
         print("")
         return cleanup(_globals, suites)
     #
     # Process the --help-suites and --help-categories options
     #
-    if (_options.help_suites or
-            _options.help_categories) and not _globals is None:
+    if (
+        _options.help_suites or _options.help_categories
+    ) and _globals is not None:
         if _options.help_suites:
             print("")
-            if len(suites) > 0:
-                print("Test suites defined in '%s':" %
-                      os.path.basename(argv[0]))
+            if suites:
+                print(f"Test suites defined in '{os.path.basename(argv[0])}':")
                 for suite in sorted(suites):
-                    print("    " + suite)
+                    print(f"    {suite}")
             else:
-                print("No test suites defined in '%s'!" %
-                      os.path.basename(argv[0]))
+                print(f"No test suites defined in '{os.path.basename(argv[0])}'!")
             print("")
         if _options.help_categories:
             tmp = list(categories)
             print("")
-            if len(tmp) > 0:
-                print("Test suite categories defined in '%s':" %
-                      os.path.basename(argv[0]))
+            if tmp:
+                print(f"Test suite categories defined in '{os.path.basename(argv[0])}':")
                 for c in sorted(tmp):
-                    print("    " + c)
+                    print(f"    {c}")
             else:
-                print("No test suite categories defined in '%s':" %
-                      os.path.basename(argv[0]))
+                print(f"No test suite categories defined in '{os.path.basename(argv[0])}':")
             print("")
         return cleanup(_globals, suites)
     #

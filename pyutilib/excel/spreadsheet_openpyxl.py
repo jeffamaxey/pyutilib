@@ -80,7 +80,7 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
         if name in self.worksheets:
             idx = self.worksheets.index(name)
             self.wb.active = idx
-        elif not name in self._ws:
+        elif name not in self._ws:
             self.wb.add_sheet(name)
             idx = len(self.wb.get_sheet_names()) - 1
             self._ws[idx] = self.wb.Worksheets.Item(name)
@@ -100,7 +100,7 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
     def calc_iterations(self, val=None):
         if val is None:
             return self.xl.Iteration
-        if not type(val) is bool:
+        if type(val) is not bool:
             raise ValueError(
                 "ExcelSpreadsheet calc_iterations can only be set to a boolean")
         self.xl.Iteration = val
@@ -108,7 +108,7 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
     def max_iterations(self, val=None):
         if val is None:
             return self.xl.MaxIterations
-        if (not type(val) in [int, float, long]) or val < 0:
+        if type(val) not in [int, float, long] or val < 0:
             raise ValueError(
                 "ExcelSpreadsheet max_iterations can only be set to nonnegative integer")
         self.xl.MaxIterations = val
@@ -171,10 +171,10 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
         #
         self.activate(wsid)
         _range = self._range(rangename)
-        if not _range is None and len(val) != self.get_range_nrows(rangename):
-            raise IOError("Setting data with " + str(len(val)) +
-                          " rows but range has " + str(
-                              self.get_range_nrows(rangename)))
+        if _range is not None and len(val) != self.get_range_nrows(rangename):
+            raise IOError(
+                f"Setting data with {len(val)} rows but range has {str(self.get_range_nrows(rangename))}"
+            )
         _destinations = list(_range.destinations)
         ws = self.wb[_destinations[0][0]]
         #
@@ -196,7 +196,7 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
         starting from the first non-blank cell until the first blank cell.
         """
         self.activate(wsid)
-        name = colname + "1"
+        name = f"{colname}1"
         if self.get_range(name) is None:
             start = self.ws().Range(name).End(self.xlDown)
         else:
@@ -205,9 +205,9 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
             range = self.ws().Range(start, start.End(self.xlDown))
         else:
             range = self.ws().Range(
-                start, self.ws().Range(colname + "65536").End(self.xlUp))
-        tmp = self._get_range_data(range, raw)
-        return tmp
+                start, self.ws().Range(f"{colname}65536").End(self.xlUp)
+            )
+        return self._get_range_data(range, raw)
 
     def get_range(self, rangename, wsid=None, raw=False):
         """
@@ -216,9 +216,7 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
         self.activate(wsid)
         _range = self._range(rangename)
         data = self._get_range_data(_range, raw)
-        if len(data) == 1:
-            return data[0]
-        return data
+        return data[0] if len(data) == 1 else data
 
     def _get_range_data(self, _range, raw):
         ans = []
@@ -230,7 +228,7 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
             #
             # If we have a since cell, just return its value
             #
-            if not ':' in _destinations[0][1]:
+            if ':' not in _destinations[0][1]:
                 return [ ws[_destinations[0][1]].value ]
             #
             # If we have a range, return a list of values
@@ -240,9 +238,7 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
         # Process Data
         #
         for row in _data:
-            rvals = []
-            for cell in row:
-                rvals.append(cell.value)
+            rvals = [cell.value for cell in row]
             if len(rvals) == 1:
                 ans.append(rvals[0])
             else:
@@ -265,9 +261,7 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
         self.activate(wsid)
         _range = self._range(rangename)
         data = self._get_range_data(_range, False)
-        if type(data[0]) is tuple:
-            return len(data[0])
-        return 1
+        return len(data[0]) if type(data[0]) is tuple else 1
 
     def _range(self, rangeid, wsid=None, exception=True):
         """
@@ -288,10 +282,9 @@ class ExcelSpreadsheet_openpyxl(ExcelSpreadsheet_base):
             except KeyError:
                 pass
             ws = self.wb.active
-            if ':' in rangeid:
-                _rangeid = rangeid.split(':')
-                return ws[_rangeid[0]:_rangeid[1]]
-            else:
+            if ':' not in rangeid:
                 return ws[rangeid:rangeid]
+            _rangeid = rangeid.split(':')
+            return ws[_rangeid[0]:_rangeid[1]]
         except:
-            raise IOError("Unknown range name `" + str(rangeid) + "'")
+            raise IOError(f"Unknown range name `{str(rangeid)}'")

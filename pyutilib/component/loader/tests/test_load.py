@@ -36,13 +36,15 @@ class TestLoader(unittest.TestCase):
 
     def test_load1(self):
         pyutilib.component.core.PluginGlobals.get_env().load_services(
-            path=currdir + "plugins1", auto_disable=True, name_re="^$")
+            path=f"{currdir}plugins1", auto_disable=True, name_re="^$"
+        )
 
     def test_load2(self):
         pyutilib.component.core.PluginGlobals.get_env().load_services(
-            path=[currdir + "plugins1", currdir + "plugins2"],
+            path=[f"{currdir}plugins1", f"{currdir}plugins2"],
             auto_disable="^$",
-            name_re="^$")
+            name_re="^$",
+        )
 
     def test_load3(self):
         try:
@@ -58,15 +60,17 @@ class TestLoader(unittest.TestCase):
 
     def test_load5(self):
         pyutilib.component.core.PluginGlobals.get_env().load_services(
-            path=[currdir + "plugins1", currdir + "plugins2"],
+            path=[f"{currdir}plugins1", f"{currdir}plugins2"],
             auto_disable=False,
-            name_re="^$")
+            name_re="^$",
+        )
 
     def test_load6(self):
         pyutilib.component.core.PluginGlobals.get_env().load_services(
-            path=[currdir + "plugins1", currdir + "plugins2"],
+            path=[f"{currdir}plugins1", f"{currdir}plugins2"],
             auto_disable=False,
-            name_re=True)
+            name_re=True,
+        )
 
 
 if __name__ == "__main__":

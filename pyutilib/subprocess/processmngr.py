@@ -68,29 +68,14 @@ else:
 if sys.version_info[0:2] >= (3, 0):
 
     def bytes_cast(x):
-        if not x is None:
-            if isinstance(x, basestring) is True:
-                return x.encode()  # Encode string to bytes type
-            else:
-                # lets assume its of type bytes
-                return x
-        else:
-            return x
+        return x.encode() if x is not None and isinstance(x, basestring) else x
 else:
     bytes_cast = lambda x: x  # Do nothing
 
 #
 # Setup the timer
 #
-if sys.version_info >= (3,3):
-    # perf_counter is guaranteed to be monotonic and the most accurate timer
-    timer = time.perf_counter
-else:
-    # On old Pythons, clock() is more accurate than time() on Windows
-    # (.35us vs 15ms), but time() is more accurate than clock() on Linux
-    # (1ns vs 1us).  However, since we are only worring about process
-    # timeouts here, we will stick with strictly monotonic timers
-    timer = time.clock
+timer = time.perf_counter if sys.version_info >= (3,3) else time.clock
 
 
 def kill_process(process, sig=signal.SIGTERM, verbose=False):
@@ -124,7 +109,7 @@ def kill_process(process, sig=signal.SIGTERM, verbose=False):
         # we can hard-ware Popen.__del__ to return immediately by telling it
         # that it did not create a child process!
         #
-        if not GlobalData.current_process is None:
+        if GlobalData.current_process is not None:
             GlobalData.current_process._child_created = False
 
 
@@ -169,16 +154,14 @@ def signal_handler(signum, frame, verbose=False):
             time.sleep(0.1)
         #GlobalData.current_process.wait()
         status = GlobalData.current_process.poll()
-        if status is not None:
-            GlobalData.signal_handler_busy = False
-            if verbose:
-                print("Done.")
-            raise OSError("Interrupted by signal " + repr(signum))
-        else:
-            raise OSError("Problem terminating process" + repr(
-                GlobalData.current_process.pid))
-        GlobalData.current_process = None
-
+        if status is None:
+            raise OSError(
+                f"Problem terminating process{repr(GlobalData.current_process.pid)}"
+            )
+        GlobalData.signal_handler_busy = False
+        if verbose:
+            print("Done.")
+        raise OSError(f"Interrupted by signal {repr(signum)}")
     # Restore the original signal handlers (because the subprocess is
     # now defunct, and we shouldn't return here)
     for _sig in list(GlobalData.original_signal_handlers):
@@ -188,7 +171,7 @@ def signal_handler(signum, frame, verbose=False):
     orig_handler = signal.getsignal(signum)
     if hasattr(orig_handler, '__call__'):
         orig_handler(signum, frame)
-    raise OSError("Interrupted by signal " + repr(signum))
+    raise OSError(f"Interrupted by signal {repr(signum)}")
 
 
 #
@@ -290,14 +273,14 @@ ERROR: pyutilib.subprocess: output stream closed before all subprocess output
 #
 def _merged_reader(*args):
 
+
+
+
     class StreamData(object):
         __slots__ = ('read', 'output', 'unbuffer', 'buf', 'data')
 
         def __init__(self, *args):
-            if _mswindows:
-                self.read = get_osfhandle(args[1])
-            else:
-                self.read = args[1]
+            self.read = get_osfhandle(args[1]) if _mswindows else args[1]
             self.unbuffer = args[0]
             self.output = tuple(x for x in args[2:] if x is not None)
             self.buf = ""
@@ -318,6 +301,7 @@ def _merged_reader(*args):
                     s.flush()
                 except ValueError:
                     pass
+
 
     raw_stderr = sys.__stderr__
     if raw_stderr is None:
@@ -499,7 +483,7 @@ def run_command(cmd,
         else:
             valgrind_cmd.extend(quote_split(valgrind_options.strip()))
         if valgrind_log is not None:
-            valgrind_cmd.append("--log-file-exactly=" + valgrind_log.strip())
+            valgrind_cmd.append(f"--log-file-exactly={valgrind_log.strip()}")
         _cmd = valgrind_cmd + _cmd
     #
     # Redirect stdout and stderr
@@ -516,8 +500,8 @@ def run_command(cmd,
         if stdout is not None or stderr is not None:
             raise ValueError("subprocess.run_command(): outfile and "
                              "{stdout, stderr} options are mutually exclusive")
-        output = "Output printed to file '%s'" % outfile
-    elif not (stdout is None and stderr is None):
+        output = f"Output printed to file '{outfile}'"
+    elif stdout is not None or stderr is not None:
         stdout_arg = stdout
         stderr_arg = stderr
         output = "Output printed to specified stdout and stderr streams"
@@ -547,7 +531,7 @@ def run_command(cmd,
     #
     if define_signal_handlers:
         handler = verbose_signal_handler if verbose else signal_handler
-        if sys.platform[0:3] != "win" and sys.platform[0:4] != 'java':
+        if sys.platform[:3] != "win" and sys.platform[:4] != 'java':
             GlobalData.original_signal_handlers[signal.SIGHUP] \
                 = signal.signal(signal.SIGHUP, handler)
         GlobalData.original_signal_handlers[signal.SIGINT] \
@@ -556,7 +540,7 @@ def run_command(cmd,
             = signal.signal(signal.SIGTERM, handler)
     rc = -1
     if debug:
-        print("Executing command %s" % (_cmd,))
+        print(f"Executing command {_cmd}")
     try:
         try:
             simpleCase = not tee
@@ -583,7 +567,6 @@ def run_command(cmd,
                 shell=shell)
             GlobalData.current_process = process.process
             rc = process.wait(timelimit)
-            GlobalData.current_process = None
         else:
             #
             # Aggressively wait for output from the process, and
@@ -592,10 +575,7 @@ def run_command(cmd,
             #
             out_fd = []
             for fid in (0, 1):
-                if fid == 0:
-                    s, raw = stdout_arg, sys.stdout
-                else:
-                    s, raw = stderr_arg, sys.stderr
+                s, raw = (stdout_arg, sys.stdout) if fid == 0 else (stderr_arg, sys.stderr)
                 try:
                     tee_fid = tee[fid]
                 except:
@@ -631,7 +611,7 @@ def run_command(cmd,
                     out_th.append(((fid, r, raw, s), r, w))
                     #th = Thread( target=thread_reader, args=(r,raw,s,fid) )
                     #out_th.append((th, r, w))
-                #
+                            #
             process = SubprocessMngr(
                 _cmd,
                 stdin=stdin,
@@ -660,9 +640,9 @@ def run_command(cmd,
             # Wait for process to finish
             #
             rc = process.wait(timelimit)
-            GlobalData.current_process = None
             out_fd = None
 
+        GlobalData.current_process = None
     except _WindowsError:
         err = sys.exc_info()[1]
         raise ApplicationError(
@@ -749,10 +729,7 @@ class SubprocessMngr(object):
         #    stderr=subprocess.STDOUT
 
         self.stdin = stdin
-        if stdin is None:
-            stdin_arg = None
-        else:
-            stdin_arg = subprocess.PIPE
+        stdin_arg = None if stdin is None else subprocess.PIPE
         #
         # We would *really* like to deal with commands in execve form
         #
@@ -807,18 +784,6 @@ class SubprocessMngr(object):
         Cleanup temporary file descriptor and delete that file.
         """
 
-        if False and self.process is not None:
-            try:
-                if self.process.poll() is None:
-                    self.kill()
-            except OSError:
-                #
-                # It should be OK to ignore this exception.  Although poll() returns
-                # None when the process is still active, there is a race condition
-                # here.  Between running poll() and running kill() the process
-                # may have terminated.
-                #
-                pass
         if self.process is not None:
             try:
                 del self.process
@@ -878,8 +843,7 @@ class SubprocessMngr(object):
                 if status is not None:
                     return status
                 else:
-                    raise OSError("Could not kill process " + repr(
-                        self.process.pid))
+                    raise OSError(f"Could not kill process {repr(self.process.pid)}")
 
     def stdout(self):
         return self.process.stdout
@@ -907,7 +871,7 @@ if __name__ == "__main__":  #pragma:nocover
     stime = timer()
     foo = run_command("./dummy", tee=True, timelimit=10)
     print("A")
-    print("Ran for " + repr(timer() - stime) + " seconds")
+    print(f"Ran for {repr(timer() - stime)} seconds")
     print(foo)
     sys.exit(0)
 
@@ -928,10 +892,9 @@ if __name__ == "__main__":  #pragma:nocover
         print("")
 
         [rc, output] = run_command("ls *py", outfile="tmp")
-        INPUT = open("tmp", 'r')
-        for line in INPUT:
-            print(line,)
-        INPUT.close()
+        with open("tmp", 'r') as INPUT:
+            for line in INPUT:
+                print(line,)
         print("")
 
         print("X")
@@ -951,7 +914,7 @@ if __name__ == "__main__":  #pragma:nocover
     stime = timer()
     foo = run_command("python -c \"while True: pass\"", timelimit=10)
     print("A")
-    print("Ran for " + repr(timer() - stime) + " seconds")
+    print(f"Ran for {repr(timer() - stime)} seconds")
 
 pyutilib.services.register_executable("valgrind")
 pyutilib.services.register_executable("memmon")

@@ -26,7 +26,8 @@ class ManagedPlugin(Plugin):
             local_name="enable",
             default=self._enable,
             cls=BoolOption,
-            doc="Option that controls behavior of service %s." % self.name)
+            doc=f"Option that controls behavior of service {self.name}.",
+        )
 
     def __del__(self):
         # JPW: There has to be a better way to determine/cache the name of the option created in the 
@@ -49,4 +50,5 @@ class ManagedSingletonPlugin(SingletonPlugin):
             local_name="enable",
             default=self._enable,
             cls=BoolOption,
-            doc="Option that controls behavior of service %s." % self.name)
+            doc=f"Option that controls behavior of service {self.name}.",
+        )

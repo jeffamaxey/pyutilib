@@ -75,7 +75,7 @@ class Configuration(Plugin):
     def __getitem__(self, name):
         """Return the configuration section with the specified name."""
         if name not in self.data:
-            raise ConfigurationError("No section " + name + " in data")
+            raise ConfigurationError(f"No section {name} in data")
         return self.data[name]
 
     def sections(self):
@@ -86,7 +86,7 @@ class Configuration(Plugin):
         """Load configuration from a file."""
         if len(self.parsers) == 0:  #pragma:nocover
             raise ConfigurationError("No IConfiguration parsers are registered")
-        if not filename is None:
+        if filename is not None:
             self.filename = filename
         if self.filename is None:
             raise ConfigurationError("Cannot load without a filename")
@@ -99,10 +99,10 @@ class Configuration(Plugin):
         self.data = {}
         self.section = []
         for (s, o, v) in self.config:
-            if not s in self.data:
+            if s not in self.data:
                 self.section.append(s)
                 self.data[s] = {}
-            if not o in self.data[s]:
+            if o not in self.data[s]:
                 self.data[s][o] = []
             self.data[s][o].append(v)
         #
@@ -110,13 +110,11 @@ class Configuration(Plugin):
         # loaded.  Load data for extensions that match each section name.
         #
         for sec in self.section:
-            #
-            # Find the option_plugins that match this section
-            #
-            plugins = []
-            for plugin in self.option_plugins:
-                if plugin.matches_section(sec):
-                    plugins.append(plugin)
+            plugins = [
+                plugin
+                for plugin in self.option_plugins
+                if plugin.matches_section(sec)
+            ]
             for option in self.data[sec]:
                 flag = False
                 for plugin in plugins:
@@ -135,7 +133,7 @@ class Configuration(Plugin):
 
     def save(self, filename=None):
         """Save configuration to a file."""
-        if not filename is None:
+        if filename is not None:
             self.filename = filename
         if self.filename is None:
             raise ConfigurationError("Cannot save without a filename")
@@ -144,22 +142,20 @@ class Configuration(Plugin):
         #
         self.clear()
         self.data = self.option_data_plugin.service().get_data()
-        self.section = list(self.data.keys())
-        self.section.sort()
+        self.section = sorted(self.data.keys())
         flag = False
         header = "\nNote: the following configuration options have been omitted because their\nvalue is 'None':\n"
         for sec in self.section:
-            plugins = []
-            for plugin in self.option_plugins:
-                if plugin.matches_section(sec):
-                    plugins.append(plugin)
-            #
-            options = list(self.data[sec].keys())
-            options.sort()
+            plugins = [
+                plugin
+                for plugin in self.option_plugins
+                if plugin.matches_section(sec)
+            ]
+            options = sorted(self.data[sec].keys())
             for option in options:
                 for plugin in plugins:
                     if plugin.matches_name(option):
-                        if not self.data[sec][option] is None:
+                        if self.data[sec][option] is not None:
                             val = self.data[sec][option]
                             self.config.append((sec, option, val))
                         else:
@@ -167,10 +163,7 @@ class Configuration(Plugin):
                             header = header + "  section=%r option=%r\n" % (
                                 sec, option)
                         break
-        if flag:
-            header = header + "\n"
-        else:
-            header = None
+        header = header + "\n" if flag else None
         #
         # Write config file
         #
@@ -179,9 +172,7 @@ class Configuration(Plugin):
 
     def pprint(self):
         """Print a simple summary of the configuration data."""
-        text = ""
-        for (s, o, v) in self.config:
-            text += "[%s] %s = %s\n" % (s, o, v)
+        text = "".join("[%s] %s = %s\n" % (s, o, v) for s, o, v in self.config)
         print(text)
 
     def summarize(self):
@@ -189,17 +180,15 @@ class Configuration(Plugin):
         tmp = {}
         for option in self.option_plugins:
             tmp.setdefault(option.section, {})[option.name] = option
-        keys = list(tmp.keys())
-        keys.sort()
+        keys = sorted(tmp.keys())
         for key in keys:
-            print("[" + key + "]")
+            print(f"[{key}]")
             print("")
-            okeys = list(tmp[key].keys())
-            okeys.sort()
+            okeys = sorted(tmp[key].keys())
             for okey in okeys:
-                print("  Option:    " + tmp[key][okey].name)
-                print("  Type:      " + tmp[key][okey].__class__.__name__)
-                print("  Default:   " + tmp[key][okey].default_str())
-                print("  Doc:       " + tmp[key][okey].__doc__)
+                print(f"  Option:    {tmp[key][okey].name}")
+                print(f"  Type:      {tmp[key][okey].__class__.__name__}")
+                print(f"  Default:   {tmp[key][okey].default_str()}")
+                print(f"  Doc:       {tmp[key][okey].__doc__}")
                 print("")
             print("")

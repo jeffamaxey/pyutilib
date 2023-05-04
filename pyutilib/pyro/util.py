@@ -62,7 +62,7 @@ def get_nameserver(host=None, port=None, num_retries=30, caller_name="Unknown"):
 
     timeout_upper_bound = 5.0
 
-    if not host is None:
+    if host is not None:
         os.environ['PYRO_NS_HOSTNAME'] = host
     elif 'PYRO_NS_HOSTNAME' in os.environ:
         host = os.environ['PYRO_NS_HOSTNAME']
@@ -133,13 +133,15 @@ def get_dispatchers(group=":PyUtilibServer",
 
     cumulative_sleep_time = 0.0
     dispatchers = []
-    for i in xrange(0, num_dispatcher_tries):
-        ns_entries = None
+    ns_entries = None
+    for _ in xrange(0, num_dispatcher_tries):
         if using_pyro3:
-            for (name, uri) in ns.flatlist():
-                if name.startswith(":PyUtilibServer.dispatcher."):
-                    if (name, uri) not in dispatchers:
-                        dispatchers.append((name, uri))
+            for name, uri in ns.flatlist():
+                if (
+                    name.startswith(":PyUtilibServer.dispatcher.")
+                    and (name, uri) not in dispatchers
+                ):
+                    dispatchers.append((name, uri))
         elif using_pyro4:
             for name in ns.list(prefix=":PyUtilibServer.dispatcher."):
                 uri = ns.lookup(name)
@@ -263,10 +265,12 @@ def bind_port(sock, host="127.0.0.1"):
 
     This code is copied from the stdlib's test.test_support module.
     """
-    if sock.family in (socket.AF_INET, socket.AF_INET6
-                      ) and sock.type == socket.SOCK_STREAM:
-        if hasattr(socket, "SO_EXCLUSIVEADDRUSE"):
-            sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+    if (
+        sock.family in (socket.AF_INET, socket.AF_INET6)
+        and sock.type == socket.SOCK_STREAM
+        and hasattr(socket, "SO_EXCLUSIVEADDRUSE")
+    ):
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
     if sock.family == socket.AF_INET:
         if host == 'localhost':
             sock.bind(('127.0.0.1', 0))
@@ -278,7 +282,7 @@ def bind_port(sock, host="127.0.0.1"):
         else:
             sock.bind((host, 0, 0, 0))
     else:
-        raise CommunicationError("unsupported socket family: " + sock.family)
+        raise CommunicationError(f"unsupported socket family: {sock.family}")
     return sock.getsockname()[1]
 
 

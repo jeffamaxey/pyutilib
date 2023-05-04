@@ -61,15 +61,11 @@ def compare_xml_files(baseline_fname,
                       exact=True):
     from pyutilib.misc.pyyaml_util import extract_subtext, compare_repn
     from pyutilib.misc.xmltodict import parse
-    #
-    INPUT = open(baseline_fname, 'r')
-    baseline = extract_subtext(
-        INPUT, begin_str=baseline_begin, end_str=baseline_end)
-    INPUT.close()
-    #
-    INPUT = open(output_fname, 'r')
-    output = extract_subtext(INPUT, begin_str=output_begin, end_str=output_end)
-    INPUT.close()
+    with open(baseline_fname, 'r') as INPUT:
+        baseline = extract_subtext(
+            INPUT, begin_str=baseline_begin, end_str=baseline_end)
+    with open(output_fname, 'r') as INPUT:
+        output = extract_subtext(INPUT, begin_str=output_begin, end_str=output_end)
     #
     baseline_repn = parse(baseline)
     output_repn = parse(output)

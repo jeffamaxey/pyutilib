@@ -29,10 +29,7 @@ whitespace_p = re.compile(r" +")
 
 
 def remove_chars_in_list(s, l):
-    if len(l) == 0:
-        return s
-
-    return "".join(x for x in s if x not in l)
+    return s if len(l) == 0 else "".join(x for x in s if x not in l)
 
 
 def get_desired_chars_from_file(f, nchars, l=""):
@@ -51,7 +48,7 @@ def get_desired_chars_from_file(f, nchars, l=""):
 
 def open_possibly_compressed_file(filename):
     if not os.path.exists(filename):
-        raise IOError("cannot find file `" + filename + "'")
+        raise IOError(f"cannot find file `{filename}'")
     try:
         is_zipfile = zipfile.is_zipfile(filename)
     except:
@@ -99,12 +96,9 @@ def file_diff(filename1, filename2, lineno=None, context=None):
             context = 3
         start = lineno - context
         stop = lineno + context
-        if start < 0:
-            start = 0
-        if stop > len(lines1):
-            stop = len(lines1)
-        if stop > len(lines2):
-            stop = len(lines2)
+        start = max(start, 0)
+        stop = min(stop, len(lines1))
+        stop = min(stop, len(lines2))
         for line in difflib.unified_diff(
                 lines2[start:stop],
                 lines1[start:stop],
@@ -173,20 +167,18 @@ def compare_file_with_numeric_values(filename1,
     this utility can ignore an arbitrary set of characters.
     """
     if not os.path.exists(filename1):
-        raise IOError("compare_file: cannot find file `" + filename1 + "' (in "
-                      + os.getcwd() + ")")
+        raise IOError(
+            f"compare_file: cannot find file `{filename1}' (in {os.getcwd()})"
+        )
     if not os.path.exists(filename2):
-        raise IOError("compare_file: cannot find file `" + filename2 + "' (in "
-                      + os.getcwd() + ")")
+        raise IOError(
+            f"compare_file: cannot find file `{filename2}' (in {os.getcwd()})"
+        )
 
     #if filecmp.cmp(filename1, filename2):
     #    return [False, None, ""]
 
-    if strict_numbers:
-        float_p = strict_float_p
-    else:
-        float_p = relaxed_float_p
-
+    float_p = strict_float_p if strict_numbers else relaxed_float_p
     try:
         absolute_tolerance, relative_tolerance = tolerance
     except:
@@ -210,8 +202,8 @@ def compare_file_with_numeric_values(filename1,
             except UnicodeDecodeError:
                 err = sys.exc_info()[1]
                 raise RuntimeError(
-                    "Decoding error while processing file %s: %s" %
-                    (filename1, str(err)))
+                    f"Decoding error while processing file {filename1}: {str(err)}"
+                )
 
             lineno += delta_lineno
             try:
@@ -219,8 +211,8 @@ def compare_file_with_numeric_values(filename1,
             except UnicodeDecodeError:
                 err = sys.exc_info()[1]
                 raise RuntimeError(
-                    "Decoding error while processing file %s: %s" %
-                    (filename2, str(err)))
+                    f"Decoding error while processing file {filename2}: {str(err)}"
+                )
 
             #print "line1 '%s'" % line1
             #print "line2 '%s'" % line2
@@ -314,11 +306,13 @@ def compare_file(filename1,
             strict_numbers=strict)
 
     if not os.path.exists(filename1):
-        raise IOError("compare_file: cannot find file `" + filename1 + "' (in "
-                      + os.getcwd() + ")")
+        raise IOError(
+            f"compare_file: cannot find file `{filename1}' (in {os.getcwd()})"
+        )
     if not os.path.exists(filename2):
-        raise IOError("compare_file: cannot find file `" + filename2 + "' (in "
-                      + os.getcwd() + ")")
+        raise IOError(
+            f"compare_file: cannot find file `{filename2}' (in {os.getcwd()})"
+        )
 
     INPUT1 = INPUT2 = None
     try:

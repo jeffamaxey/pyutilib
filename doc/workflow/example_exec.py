@@ -21,4 +21,4 @@ for root, dirs, files in os.walk(os.path.abspath(os.path.dirname(__file__)), top
         if name == 'example_exec.py':
             continue
         if name.endswith('.py'):
-            strip_example(root+'/'+name)
+            strip_example(f'{root}/{name}')

@@ -24,9 +24,8 @@ class Factory(object):
     def register(self, methodName, constructor, *args, **kargs):
         """ Register a constructor """
         self.Keys = self.Keys + [methodName]
-        _args = [constructor]
-        _args.extend(args)
-        mname = "construct_" + methodName
+        _args = [constructor, *args]
+        mname = f"construct_{methodName}"
         self.constructors[methodName] = _Functor(*_args, **kargs)
         #self.constructors[methodName] = apply(_Functor,_args, kargs)
         setattr(self, methodName, _Functor(*_args, **kargs))

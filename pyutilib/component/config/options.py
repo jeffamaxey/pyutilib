@@ -129,7 +129,7 @@ class OptionData(Plugin):
             self.data = {}
         else:
             for key in keys:
-                if not key in self.data:
+                if key not in self.data:
                     continue
                 del self.data[key]
 
@@ -152,7 +152,7 @@ class OptionPlugin(Plugin):
         # Somewhere in our tests, the weakref to the OptionData object is being 
         # corrupted.  Perhaps this is caused by 'nose' or 'import' logic?
         #
-        if True and len(self.data) == 0:
+        if len(self.data) == 0:
             PluginGlobals.interface_services[IOptionDataProvider].add(
                 PluginGlobals._default_OptionData._id)
             PluginGlobals.plugin_instances[
@@ -179,8 +179,8 @@ class OptionPlugin(Plugin):
             #print env_.nonsingleton_plugins
             #print [env_.singleton_services[cls_] for cls_ in env_.singleton_services]
             raise PluginError(
-                "Problem constructing a global OptionData object %s" %
-                self.name)
+                f"Problem constructing a global OptionData object {self.name}"
+            )
 
     def matches_section(self, section):
         """
@@ -188,8 +188,11 @@ class OptionPlugin(Plugin):
         section, or if the option's section regular expression matches the
         section name.
         """
-        return (section == self.section) or (self.section_re != None and (
-            not self.section_p.match(section) is None))
+        return (
+            section == self.section
+            or self.section_re != None
+            and self.section_p.match(section) is not None
+        )
 
     def matches_name(self, name):
         """
@@ -218,7 +221,7 @@ class OptionPlugin(Plugin):
         if raw:
             self.data.service().set(self.section, self.name, _value_)
         else:
-            if not type(_value_) is list or len(_value_) == 0:
+            if type(_value_) is not list or len(_value_) == 0:
                 _value_ = [_value_]
             self.data.service().set(self.section, self.name, self.convert(
                 _value_, self.default))
@@ -291,12 +294,12 @@ class Option(OptionPlugin):
             self.default = v
         elif k == "doc":
             self.__doc__ = v
-        elif not k in ("local_name"):
+        elif k not in "local_name":
             #
             # It's convenient to ignore several keywords, which are really used by
             # declare_option().
             #
-            raise OptionError("Unknown keyword: " + k)
+            raise OptionError(f"Unknown keyword: {k}")
 
     def __get__(self, instance, owner):
         raise PluginError(
@@ -308,7 +311,7 @@ class Option(OptionPlugin):
 
     def __repr__(self, simple=False):
         """Returns a string representation of the option name"""
-        sec = " [" + self.section + "]"
+        sec = f" [{self.section}]"
         return '<%s%s %r>' % (self.__class__.__name__, sec, self.name)
 
 
@@ -323,7 +326,7 @@ class VirtualOption(object):
         self.option = option
 
     def _get_option(self, instance):
-        if not self.option is None:
+        if self.option is not None:
             return self.option
         try:
             return getattr(instance, self.name)
@@ -334,9 +337,7 @@ class VirtualOption(object):
 
     def __get__(self, instance, owner):
         """Returns the value of the option, accessed through the local instance."""
-        if owner is None:  #pragma:nocover
-            return self
-        return self._get_option(instance).get_value()
+        return self if owner is None else self._get_option(instance).get_value()
 
     def __set__(self, instance, value):
         """Sets the value of the option"""
@@ -344,13 +345,14 @@ class VirtualOption(object):
 
     def __repr__(self, simple=False):
         """Returns a string representation of the option name"""
-        return "<VirtualOption %s>" % self.name
+        return f"<VirtualOption {self.name}>"
 
 
 def declare_option(name, cls=Option, **kwds):
     if not issubclass(cls, Option):
         raise PluginError(
-            "The 'cls' argument must specify an Option class type: %s" % cls)
+            f"The 'cls' argument must specify an Option class type: {cls}"
+        )
     local_name = kwds.get("local_name", name)
 
     frame = sys._getframe(1)
@@ -364,16 +366,15 @@ def declare_option(name, cls=Option, **kwds):
             # Class decorator.  Initialize the VirtualOption, and then
             # create a locally-available Option instance.
             #
-            locals_[local_name] = VirtualOption("_" + local_name, option_)
+            locals_[local_name] = VirtualOption(f"_{local_name}", option_)
         else:
             #
             # Class constructor.  If a VirtualOption does not exist in this
             # class, create it.  Create an Option instance in this instance.
             #
-            if not local_name in locals_["self"].__class__.__dict__:
-                setattr(locals_["self"].__class__, local_name,
-                        VirtualOption("_" + local_name))
-            setattr(locals_["self"], "_" + local_name, option_)
+            if local_name not in locals_["self"].__class__.__dict__:
+                setattr(locals_["self"].__class__, local_name, VirtualOption(f"_{local_name}"))
+            setattr(locals_["self"], f"_{local_name}", option_)
     else:
         raise PluginError(
             "declare_option() can only be used in a class definition")
@@ -411,7 +412,7 @@ class DictOption(Option):
             self.__dict__["data"] = ep
 
         def __iter__(self):
-            if not self._section_ in self.data.service().data:
+            if self._section_ not in self.data.service().data:
                 return {}.__iter__()
             return self.data.service().data[self._section_].__iter__()
 
@@ -419,7 +420,7 @@ class DictOption(Option):
             return self.data.service().get(self._section_, name)
 
         def keys(self):
-            if not self._section_ in self.data.service().data:
+            if self._section_ not in self.data.service().data:
                 return []
             return self.data.service().data[self._section_].keys()
 
@@ -459,7 +460,7 @@ class DictOption(Option):
         NOTE: the raw option is ignored, but maintained for compatibility with the
         parent class.
         """
-        if not type(_value_) is dict:
+        if type(_value_) is not dict:
             return
         for key in _value_:
             self.default.__setattr__(key, _value_[key])
@@ -501,10 +502,9 @@ class IntOption(Option):
         try:
             return int(val)
         except ValueError:
-            raise OptionError('Expected integer, got %s' % repr(value))
+            raise OptionError(f'Expected integer, got {repr(value)}')
         except TypeError:
-            raise OptionError('Expected string or integer type, got %s' %
-                              repr(value))
+            raise OptionError(f'Expected string or integer type, got {repr(value)}')
 
 
 class FloatOption(Option):
@@ -518,10 +518,9 @@ class FloatOption(Option):
         try:
             return float(val)
         except ValueError:
-            raise OptionError('Expected float, got %s' % repr(value))
+            raise OptionError(f'Expected float, got {repr(value)}')
         except TypeError:
-            raise OptionError('Expected string or float type, got %s' %
-                              repr(value))
+            raise OptionError(f'Expected string or float type, got {repr(value)}')
 
 
 class FileOption(Option):
@@ -550,14 +549,10 @@ class FileOption(Option):
         """Conversion routine."""
         val = value[-1]
         if not val:
-            if default is None:
-                return None
-            return os.path.normcase(os.path.realpath(default))
+            return None if default is None else os.path.normcase(os.path.realpath(default))
         if not os.path.isabs(val):
             val = os.path.join(self.dir, val)
-            return os.path.normcase(os.path.realpath(val))
-        else:
-            return os.path.normcase(os.path.realpath(val))
+        return os.path.normcase(os.path.realpath(val))
 
     def set_dir(self, path):
         """Sets the path of the configuration data file."""
@@ -588,7 +583,7 @@ class ExecutableOption(FileOption):
             val = os.path.normcase(os.path.realpath(default))
         elif os.path.isabs(val):
             val = os.path.normcase(os.path.realpath(val))
-        elif not self.dir is None:
+        elif self.dir is not None:
             val = os.path.normcase(
                 os.path.realpath(os.path.join(self.dir, val)))
         else:

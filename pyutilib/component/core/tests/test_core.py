@@ -189,15 +189,15 @@ class TestExtensionPoint(unittest.TestCase):
     def test_ep_registration(self):
         """Test ExtensionPoint registration"""
         ep = ExtensionPoint(IDebug1)
-        self.assertEqual(ep.extensions(), list())
+        self.assertEqual(ep.extensions(), [])
         s1 = Plugin1()
         s1a = Plugin1a()
         s2 = Plugin2()
         s3 = Plugin3()
         s4 = Plugin4()
         s5 = Plugin5()
-        self.assertEqual(set(ep.extensions()), set([s1, s2, s4]))
-        self.assertEqual(set(ep.extensions()), set([s1, s2, s4]))
+        self.assertEqual(set(ep.extensions()), {s1, s2, s4})
+        self.assertEqual(set(ep.extensions()), {s1, s2, s4})
 
     def test_ep_call(self):
         """Test ExtensionPoint __call__"""
@@ -207,16 +207,14 @@ class TestExtensionPoint(unittest.TestCase):
         s3 = Plugin4(name="p3")
         s4 = Plugin4(name="p3")
         s5 = Plugin3(name="p4")
-        self.assertEqual(
-            ep(), sorted(
-                set([s1, s2, s3, s4]), key=lambda x: x._id))
+        self.assertEqual(ep(), sorted({s1, s2, s3, s4}, key=lambda x: x._id))
         try:
             ep(0)
             self.fail("expected failure")
         except PluginError:
             pass
         self.assertEqual(ep("p1"), [s1])
-        self.assertEqual(ep('p3'), sorted(set([s3, s4]), key=lambda x: x._id))
+        self.assertEqual(ep('p3'), sorted({s3, s4}, key=lambda x: x._id))
 
     def test_ep_service(self):
         """Test ExtensionPoint service()"""
@@ -238,8 +236,8 @@ class TestExtensionPoint(unittest.TestCase):
         s2 = Plugin1()
         namespace_current1 = ExtensionPoint(IDebug1).extensions()
         namespace_current2 = ExtensionPoint(IDebug1, env).extensions()
-        self.assertEqual(set(namespace_current1), set((s1, s2)))
-        self.assertEqual(set(namespace_current2), set((s1, s2)))
+        self.assertEqual(set(namespace_current1), {s1, s2})
+        self.assertEqual(set(namespace_current2), {s1, s2})
 
 
 class TestPlugin(unittest.TestCase):
@@ -256,7 +254,7 @@ class TestPlugin(unittest.TestCase):
         s1 = Plugin6()
         self.assertEqual(isinstance(s1, PluginEnvironment), True)
         self.assertEqual(isinstance(s1, Plugin), True)
-        self.assertEqual(set(s1.__interfaces__.keys()), set([IDebug3]))
+        self.assertEqual(set(s1.__interfaces__.keys()), {IDebug3})
 
     #def test_init2(self):
     #"""Test that a plugin sets up the registry appropriately"""
@@ -269,9 +267,9 @@ class TestPlugin(unittest.TestCase):
     def test_init4(self):
         """Verify that base classes are also captured"""
         s1 = Plugin8()
-        self.assertEqual(set(s1.__interfaces__.keys()), set([IDebug3, IDebug2]))
+        self.assertEqual(set(s1.__interfaces__.keys()), {IDebug3, IDebug2})
         s1 = Plugin9()
-        self.assertEqual(set(s1.__interfaces__.keys()), set([IDebug3]))
+        self.assertEqual(set(s1.__interfaces__.keys()), {IDebug3})
 
     def test_init5(self):
         #
@@ -299,7 +297,7 @@ class TestPlugin(unittest.TestCase):
     def test_enabled(self):
         """Test control of enabled()"""
         ep = ExtensionPoint(IDebug1)
-        self.assertEqual(ep.extensions(), list())
+        self.assertEqual(ep.extensions(), [])
         s1 = Plugin1()
         s2 = Plugin2()
         s3 = Plugin3()
@@ -316,13 +314,13 @@ class TestPlugin(unittest.TestCase):
         #
         tmp = set(ep.extensions())
         if s7e in tmp:
-            self.assertEqual(
-                set(ep.extensions()), set([s1, s2, s4, s7a, s7c, s7e]))
+            self.assertEqual(set(ep.extensions()), {s1, s2, s4, s7a, s7c, s7e})
         else:
-            self.assertEqual(
-                set(ep.extensions()), set([s1, s2, s4, s7b, s7d, s7f]))
-        self.assertTrue(PluginGlobals.services() >= set(
-            [s1, s2, s3, s4, s5, s7a, s7b, s7c, s7d, s7e, s7f]))
+            self.assertEqual(set(ep.extensions()), {s1, s2, s4, s7b, s7d, s7f})
+        self.assertTrue(
+            PluginGlobals.services()
+            >= {s1, s2, s3, s4, s5, s7a, s7b, s7c, s7d, s7e, s7f}
+        )
 
     def test_implements1(self):
         p1 = Plugin11a()
@@ -375,23 +373,20 @@ class TestMisc(unittest.TestCase):
             self.assertFalse(re.match("<Plugin Plugin3", str(s3)) is None)
             self.assertFalse(re.match("<Plugin Plugin1", str(s4)) is None)
             self.assertFalse(re.match("<Plugin Plugin3", str(s5)) is None)
-            pyutilib.misc.setup_redirect(currdir + "log1.out")
+            pyutilib.misc.setup_redirect(f"{currdir}log1.out")
             PluginGlobals.pprint(plugins=False, json=True)
             pyutilib.misc.reset_redirect()
-            self.assertMatchesJsonBaseline(currdir + "log1.out",
-                                           currdir + "log1.jsn")
+            self.assertMatchesJsonBaseline(f"{currdir}log1.out", f"{currdir}log1.jsn")
             if yaml_available:
-                pyutilib.misc.setup_redirect(currdir + "log1.out")
+                pyutilib.misc.setup_redirect(f"{currdir}log1.out")
                 PluginGlobals.pprint(plugins=False, json=True)
                 pyutilib.misc.reset_redirect()
-                self.assertMatchesYamlBaseline(currdir + "log1.out",
-                                               currdir + "log1.yml")
+                self.assertMatchesYamlBaseline(f"{currdir}log1.out", f"{currdir}log1.yml")
                 #
-                pyutilib.misc.setup_redirect(currdir + "log1.out")
+                pyutilib.misc.setup_redirect(f"{currdir}log1.out")
                 PluginGlobals.pprint(plugins=False)
                 pyutilib.misc.reset_redirect()
-                self.assertMatchesYamlBaseline(currdir + "log1.out",
-                                               currdir + "log1.yml")
+                self.assertMatchesYamlBaseline(f"{currdir}log1.out", f"{currdir}log1.yml")
         finally:
             PluginGlobals.remove_env("foo", cleanup=True, singleton=False)
             PluginGlobals.remove_env("bar", cleanup=True, singleton=False)
@@ -410,18 +405,18 @@ class TestManager(unittest.TestCase):
     def test_init(self):
         """Test the behavior of a plugin that is a service manager"""
         s0 = Plugin1()
-        self.assertTrue(PluginGlobals.services() >= set([s0]))
+        self.assertTrue(PluginGlobals.services() >= {s0})
         env = PluginEnvironment("dummy")
         PluginGlobals.add_env(env)
         s1 = Plugin6()
         #self.assertTrue(s1 in PluginGlobals.get_env("testing"))
         #self.assertEqual(s1.services, set([]))
-        self.assertTrue(PluginGlobals.services("testing") >= set([s0, s1]))
+        self.assertTrue(PluginGlobals.services("testing") >= {s0, s1})
         PluginGlobals.remove_env("dummy")
         s2 = Plugin6()
         #self.assertTrue(s2 in PluginGlobals.get_env())
         #self.assertEqual(env.services, set([]))
-        self.assertTrue(PluginGlobals.services("testing") >= set([s0, s1, s2]))
+        self.assertTrue(PluginGlobals.services("testing") >= {s0, s1, s2})
 
     def Xtest_get(self):
         env = PluginEnvironment("dummy")
@@ -456,6 +451,7 @@ class TestManager(unittest.TestCase):
 
     def test_factory(self):
 
+
         class Plugin5_factory(Plugin):
             implements(IDebug3, service=True)
 
@@ -474,23 +470,26 @@ class TestManager(unittest.TestCase):
             self.fail("expected error")
         except PluginError:
             pass
-        pyutilib.misc.setup_redirect(currdir + "factory.out")
+        pyutilib.misc.setup_redirect(f"{currdir}factory.out")
         PluginGlobals.pprint(plugins=False, json=True)
         pyutilib.misc.reset_redirect()
-        self.assertMatchesJsonBaseline(currdir + "factory.out",
-                                       currdir + "factory.jsn")
+        self.assertMatchesJsonBaseline(
+            f"{currdir}factory.out", f"{currdir}factory.jsn"
+        )
         if yaml_available:
-            pyutilib.misc.setup_redirect(currdir + "factory.out")
+            pyutilib.misc.setup_redirect(f"{currdir}factory.out")
             PluginGlobals.pprint(plugins=False, json=True)
             pyutilib.misc.reset_redirect()
-            self.assertMatchesYamlBaseline(currdir + "factory.out",
-                                           currdir + "factory.yml")
+            self.assertMatchesYamlBaseline(
+                f"{currdir}factory.out", f"{currdir}factory.yml"
+            )
             #
-            pyutilib.misc.setup_redirect(currdir + "factory.out")
+            pyutilib.misc.setup_redirect(f"{currdir}factory.out")
             PluginGlobals.pprint(plugins=False)
             pyutilib.misc.reset_redirect()
-            self.assertMatchesYamlBaseline(currdir + "factory.out",
-                                           currdir + "factory.yml")
+            self.assertMatchesYamlBaseline(
+                f"{currdir}factory.out", f"{currdir}factory.yml"
+            )
 
 
 if __name__ == "__main__":

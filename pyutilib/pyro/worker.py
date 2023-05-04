@@ -91,14 +91,13 @@ class TaskWorkerBase(object):
                     else:
                         self.dispatcher = _pyro.Proxy(uri)
                         self.dispatcher._pyroTimeout = 10
-                    if not self.dispatcher.register_worker(self.WORKERNAME):
-                        if using_pyro4:
-                            self.dispatcher._pyroRelease()
-                        else:
-                            self.dispatcher._release()
-                        self.dispatcher = None
-                    else:
+                    if self.dispatcher.register_worker(self.WORKERNAME):
                         break
+                    if using_pyro4:
+                        self.dispatcher._pyroRelease()
+                    else:
+                        self.dispatcher._release()
+                    self.dispatcher = None
                 except _connection_problem:
                     self.dispatcher = None
             if self.dispatcher is not None:
@@ -166,8 +165,8 @@ class TaskWorker(TaskWorkerBase):
         print("Listening for work from dispatcher...")
 
         while 1:
-            self._worker_error = False
             self._worker_shutdown = False
+            self._worker_error = False
             try:
                 tasks = None
                 if self._bulk_task_collection:
@@ -195,25 +194,24 @@ class TaskWorker(TaskWorkerBase):
             else:
                 if len(tasks) > 0:
                     if self._verbose:
-                        print("Collected %s task(s) from queue %s" %
-                              (len(tasks), self.type))
+                        print(f"Collected {len(tasks)} task(s) from queue {self.type}")
                     results = {}
                     # process tasks in order of increasing id
                     for task in sorted(tasks, key=lambda x: x['id']):
                         if self._verbose:
-                            print("Processing task with id=%s from queue %s" %
-                                  (task['id'], self.type))
+                            print(f"Processing task with id={task['id']} from queue {self.type}")
                         if self._contiguous_task_processing:
                             # TODO: add code to skip tasks until the next contiguous
                             #       task arrives
                             if self._next_processing_id is None:
                                 self._next_processing_id = task['id']
                             if self._next_processing_id != task['id']:
-                                raise RuntimeError("Got task with id=%s, expected id=%s"
-                                                   % (task['id'], self._next_processing_id))
+                                raise RuntimeError(
+                                    f"Got task with id={task['id']}, expected id={self._next_processing_id}"
+                                )
                             self._next_processing_id += 1
                         self._worker_task_return_queue = \
-                            _worker_task_return_queue_unset
+                                _worker_task_return_queue_unset
                         self._current_task_client = task['client']
                         task['result'] = self.process(task['data'])
                         task['processedBy'] = self.WORKERNAME
@@ -226,10 +224,8 @@ class TaskWorker(TaskWorkerBase):
                             task['processedBy'] = self.WORKERNAME
                             results[return_type_name].append(task)
                             print(
-                                "Task worker reported error during processing "
-                                "of task with id=%s. Any remaining tasks in "
-                                "local queue will be ignored." %
-                                (task['id']))
+                                f"Task worker reported error during processing of task with id={task['id']}. Any remaining tasks in local queue will be ignored."
+                            )
                             break
                         if self._worker_shutdown:
                             self.close()
@@ -281,10 +277,7 @@ class MultiTaskWorker(TaskWorkerBase):
         """
         if self._num_types == 0:
             return []
-        type_list = []
-        for cnt in xrange(self._num_types):
-            type_list.append(advance_iterator(self._type_cycle))
-        return type_list
+        return [advance_iterator(self._type_cycle) for _ in xrange(self._num_types)]
 
     def cycle_type_order(self):
         advance_iterator(self._type_cycle)
@@ -321,8 +314,8 @@ class MultiTaskWorker(TaskWorkerBase):
         print("Listening for work from dispatcher...")
 
         while 1:
-            self._worker_error = False
             self._worker_shutdown = False
+            self._worker_error = False
             try:
                 tasks = self.dispatcher.get_tasks(self.current_type_order())
             except _worker_connection_problem as e:
@@ -342,9 +335,9 @@ class MultiTaskWorker(TaskWorkerBase):
                 if len(tasks) > 0:
 
                     if self._verbose:
-                        print("Collected %s task(s) from %s queue(s)" %
-                              (sum(len(_tl)
-                                   for _tl in itervalues(tasks)), len(tasks)))
+                        print(
+                            f"Collected {sum(len(_tl) for _tl in itervalues(tasks))} task(s) from {len(tasks)} queue(s)"
+                        )
 
                     results = {}
                     # process tasks by type in order of increasing id
@@ -352,7 +345,7 @@ class MultiTaskWorker(TaskWorkerBase):
                         type_results = results[type_name] = []
                         for task in sorted(type_tasks, key=lambda x: x['id']):
                             self._worker_task_return_queue = \
-                                _worker_task_return_queue_unset
+                                    _worker_task_return_queue_unset
                             self._current_task_client = task['client']
                             task['result'] = self.process(task['data'])
                             task['processedBy'] = self.WORKERNAME
@@ -364,10 +357,8 @@ class MultiTaskWorker(TaskWorkerBase):
                                     results[return_type_name] = []
                                 results[return_type_name].append(task)
                                 print(
-                                    "Task worker reported error during processing "
-                                    "of task with id=%s. Any remaining tasks in "
-                                    "local queue will be ignored." %
-                                    (task['id']))
+                                    f"Task worker reported error during processing of task with id={task['id']}. Any remaining tasks in local queue will be ignored."
+                                )
                                 break
                             if self._worker_shutdown:
                                 self.close()

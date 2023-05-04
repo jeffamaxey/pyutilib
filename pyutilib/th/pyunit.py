@@ -135,7 +135,7 @@ def _run_import_baseline_test(self,
     try:
         import pyutilib.misc
         pyutilib.misc.setup_redirect(outfile)
-        pyutilib.misc.import_file(module + ".py", clear_cache=True)
+        pyutilib.misc.import_file(f"{module}.py", clear_cache=True)
         pyutilib.misc.reset_redirect()
         #
         if baseline.endswith('.json'):
@@ -183,20 +183,18 @@ def _run_cmd_baseline_test(self,
 
 
     try:
-        OUTPUT = open(outfile, "w")
-        proc = subprocess.Popen(
-            cmd, shell=useShell, stdout=OUTPUT, stderr=subprocess.STDOUT)
-        proc.wait()
-        OUTPUT.close()
+        with open(outfile, "w") as OUTPUT:
+            proc = subprocess.Popen(
+                cmd, shell=useShell, stdout=OUTPUT, stderr=subprocess.STDOUT)
+            proc.wait()
         if cmdfile is not None:
-            OUTPUT = open(cmdfile, 'w')
-            OUTPUT.write("#!/bin/sh\n")
-            OUTPUT.write("# Baseline test command\n")
-            OUTPUT.write("#    cwd      %s\n" % cwd)
-            OUTPUT.write("#    outfile  %s\n" % outfile)
-            OUTPUT.write("#    baseline %s\n" % baseline)
-            OUTPUT.write(cmd + '\n')
-            OUTPUT.close()
+            with open(cmdfile, 'w') as OUTPUT:
+                OUTPUT.write("#!/bin/sh\n")
+                OUTPUT.write("# Baseline test command\n")
+                OUTPUT.write("#    cwd      %s\n" % cwd)
+                OUTPUT.write("#    outfile  %s\n" % outfile)
+                OUTPUT.write("#    baseline %s\n" % baseline)
+                OUTPUT.write(cmd + '\n')
             os.chmod(cmdfile, stat.S_IREAD | stat.S_IWRITE | stat.S_IEXEC)
         if baseline.endswith('.json'):
             self.assertMatchesJsonBaseline(
@@ -210,7 +208,7 @@ def _run_cmd_baseline_test(self,
         else:
             self.assertFileEqualsBaseline(
                 outfile, baseline, filter=filter, tolerance=tolerance)
-        if not cmdfile is None:
+        if cmdfile is not None:
             os.remove(cmdfile)
     finally:
         OUTPUT.close()
@@ -233,11 +231,8 @@ def _run_fn_baseline_test(self,
 
 #@nottest
 def _run_fn_test(self, fn, name, suite):
-    if suite is None:
-        explanation = fn(self, name)
-    else:
-        explanation = fn(self, name, suite)
-    if not explanation is None and explanation != "":
+    explanation = fn(self, name) if suite is None else fn(self, name, suite)
+    if explanation is not None and explanation != "":
         self.fail(explanation)
 
 
@@ -288,7 +283,7 @@ class TestCase(unittest.TestCase):
            meaningful when running this TestCase with 'nose', using the TestData plugin.
         """
         tmp = getattr(self, 'testdata', None)
-        if not tmp is None:
+        if tmp is not None:
             tmp[name] = value
 
     def shortDescription(self):
@@ -358,24 +353,40 @@ class TestCase(unittest.TestCase):
         import pyutilib.misc
         [flag, lineno, diffs] = pyutilib.misc.compare_file(
             testfile, baseline, filter=filter, tolerance=tolerance)
-        if not flag:
-            if delete:
-                os.remove(testfile)
-        else:  #pragma:nocover
-            self.fail("Unexpected output difference at line " + str(
-                lineno) + ":\n   testfile=" + testfile + "\n   baseline=" +
-                      baseline + "\nDiffs:\n" + diffs)
+        if flag:  #pragma:nocover
+            self.fail(
+                (
+                    (
+                        (
+                            (
+                                (
+                                    (
+                                        f"Unexpected output difference at line {str(lineno)}"
+                                        + ":\n   testfile="
+                                    )
+                                    + testfile
+                                )
+                                + "\n   baseline="
+                            )
+                            + baseline
+                        )
+                        + "\nDiffs:\n"
+                    )
+                    + diffs
+                )
+            )
+        elif delete:
+            os.remove(testfile)
         return [flag, lineno]
 
     def assertFileEqualsLargeBaseline(self, testfile, baseline, delete=True):
         import pyutilib.misc
         flag = pyutilib.misc.compare_large_file(testfile, baseline)
-        if not flag:
-            if delete:
-                os.remove(testfile)
-        else:  #pragma:nocover
+        if flag:  #pragma:nocover
             self.fail("Unexpected output difference:\n   testfile=" + testfile +
                       "\n   baseline=" + baseline)
+        elif delete:
+            os.remove(testfile)
         return flag
 
     def assertFileEqualsBinaryFile(self, testfile, baseline, delete=True):
@@ -400,10 +411,9 @@ class TestCase(unittest.TestCase):
         tmp = tmp.replace("\\", "_")
         tmp = tmp.replace(".", "_")
         func = lambda self, c1=fn, c2=name, c3=suite: _run_fn_test(self, c1, c2, c3)
-        func.__name__ = "test_" + str(tmp)
-        func.__doc__ = "function test: "+func.__name__+ \
-                       " ("+str(cls.__module__)+'.'+str(cls.__name__)+")"
-        setattr(cls, "test_" + tmp, func)
+        func.__name__ = f"test_{str(tmp)}"
+        func.__doc__ = f"function test: {func.__name__} ({str(cls.__module__)}.{str(cls.__name__)})"
+        setattr(cls, f"test_{tmp}", func)
         cls._options[suite, name] = options
 
     add_fn_test = classmethod(add_fn_test)
@@ -429,7 +439,7 @@ class TestCase(unittest.TestCase):
             print("ERROR: must specify the test name")
             return
         if baseline is None:
-            baseline = os.path.abspath(name + ".txt")
+            baseline = os.path.abspath(f"{name}.txt")
         tmp = name.replace("/", "_")
         tmp = tmp.replace("\\", "_")
         tmp = tmp.replace(".", "_")
@@ -439,7 +449,7 @@ class TestCase(unittest.TestCase):
                 outfile = os.path.join(dirname,
                                        basename.rpartition('.')[0] + '.out')
             else:
-                outfile = baseline + '.out'
+                outfile = f'{baseline}.out'
         #
         # Create an explicit function so we can assign it a __name__ attribute.
         # This is needed by the 'nose' package
@@ -448,12 +458,11 @@ class TestCase(unittest.TestCase):
             func = lambda self,c1=cwd,c2=cmd,c3=os.path.abspath(outfile),c4=baseline,c5=filter,c6=cmdfile,c7=tolerance,c8=exact,c9=forceskip: _run_cmd_baseline_test(self,cwd=c1,cmd=c2,outfile=c3,baseline=c4,filter=c5,cmdfile=c6,tolerance=c7,exact=c8,forceskip=c9)
         else:
             func = lambda self,c1=fn,c2=name,c3=baseline,c4=filter,c5=tolerance,c6=forceskip: _run_fn_baseline_test(self,fn=c1,name=c2,baseline=c3,filter=c4,tolerance=c5,forceskip=c6)
-        func.__name__ = "test_" + tmp
-        func.__doc__ = "baseline test: "+func.__name__+ \
-                       " ("+str(cls.__module__)+'.'+str(cls.__name__)+")"
-        if fn is None and not cmdfile is None:
-            func.__doc__ += "  Command archived in " + os.path.abspath(cmdfile)
-        setattr(cls, "test_" + tmp, func)
+        func.__name__ = f"test_{tmp}"
+        func.__doc__ = f"baseline test: {func.__name__} ({str(cls.__module__)}.{str(cls.__name__)})"
+        if fn is None and cmdfile is not None:
+            func.__doc__ += f"  Command archived in {os.path.abspath(cmdfile)}"
+        setattr(cls, f"test_{tmp}", func)
 
     add_baseline_test = classmethod(add_baseline_test)
 
@@ -475,7 +484,7 @@ class TestCase(unittest.TestCase):
             print("ERROR: must specify test name")
             return
         if baseline is None:
-            baseline = name + ".txt"
+            baseline = f"{name}.txt"
         tmp = name.replace("/", "_")
         tmp = tmp.replace("\\", "_")
         tmp = tmp.replace(".", "_")
@@ -485,14 +494,14 @@ class TestCase(unittest.TestCase):
                 outfile = os.path.join(dirname,
                                        basename.rpartition('.')[0] + '.out')
             else:
-                outfile = baseline + '.out'
+                outfile = f'{baseline}.out'
         #
         # Create an explicit function so we can assign it a __name__ attribute.
         # This is needed by the 'nose' package
         #
         func = lambda self,c1=cwd,c2=module,c3=outfile,c4=baseline,c5=filter,c6=tolerance: _run_import_baseline_test(self,cwd=c1,module=c2,outfile=c3,baseline=c4,filter=c5,tolerance=c6)
-        func.__name__ = "test_" + tmp
-        func.__doc__ = "import test: " + func.__name__
-        setattr(cls, "test_" + tmp, func)
+        func.__name__ = f"test_{tmp}"
+        func.__doc__ = f"import test: {func.__name__}"
+        setattr(cls, f"test_{tmp}", func)
 
     add_import_test = classmethod(add_import_test)

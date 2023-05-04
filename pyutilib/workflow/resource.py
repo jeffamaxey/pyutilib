@@ -15,13 +15,9 @@ from pyutilib.workflow import globals
 class Resource(object):
 
     def __init__(self, id=None, name=None):
-        if not id is None:
-            # TBD:  does this ever happen?
-            self.id = id
-        else:
-            self.id = globals.unique_id()
+        self.id = id if id is not None else globals.unique_id()
         if name is None:
-            self.description = "Resource" + str(self.id)
+            self.description = f"Resource{str(self.id)}"
             self.name = self.description
         else:
             # TBD:  does this ever happen?
@@ -42,4 +38,4 @@ class Resource(object):
         return str(self)  #pragma:nocover
 
     def __str__(self):
-        return "%s" % str(self.name)  #pragma:nocover
+        return f"{str(self.name)}"

@@ -10,6 +10,6 @@ class FileResource(resource.Resource):
         resource.Resource.__init__(self)
         self.filename = name
         if name is None:
-            self.name = "File" + self.id
+            self.name = f"File{self.id}"
         else:
-            self.name = "File_" + os.path.basename(name)
+            self.name = f"File_{os.path.basename(name)}"

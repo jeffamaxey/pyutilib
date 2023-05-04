@@ -26,10 +26,7 @@ else:
     # (1ns vs 1us).  It is unfortunate that time() is not monotonic, but
     # since the TicTocTimer is used for (potentially very accurate)
     # timers, we will sacrifice monotonicity on Linux for resolution.
-    if sys.platform.startswith('win'):
-        _time_source = time.clock
-    else:
-        _time_source = time.time
+    _time_source = time.clock if sys.platform.startswith('win') else time.time
 
 class TicTocTimer(object):
     """A class to calculate and report elapsed time.
@@ -105,7 +102,7 @@ class TicTocTimer(object):
 
         if msg is None:
             msg = 'File "%s", line %s in %s' % \
-                  traceback.extract_stack(limit=2)[0][:3]
+                      traceback.extract_stack(limit=2)[0][:3]
 
         now = _time_source()
         if self._start_count or self._lastTime is None:
@@ -127,8 +124,8 @@ class TicTocTimer(object):
         if msg:
             if ostream is None:
                 ostream = self._ostream
-                if ostream is None and logger is None:
-                    ostream = sys.stdout
+            if ostream is None and logger is None:
+                ostream = sys.stdout
             if ostream is not None:
                 ostream.write(msg)
 
@@ -165,7 +162,7 @@ toc = _globalTimer.toc
 class _HierarchicalHelper(object):
     def __init__(self):
         self.tic_toc = TicTocTimer()
-        self.timers = dict()
+        self.timers = {}
         self.total_time = 0
         self.n_calls = 0
 
@@ -304,8 +301,8 @@ class HierarchicalTimer(object):
 
     """
     def __init__(self):
-        self.stack = list()
-        self.timers = dict()
+        self.stack = []
+        self.timers = {}
 
     def _get_timer(self, identifier, should_exist=False):
         """
@@ -328,15 +325,13 @@ class HierarchicalTimer(object):
 
         """
         parent = self._get_timer_from_stack(self.stack)
-        if identifier in parent.timers:
-            return parent.timers[identifier]
-        else:
+        if identifier not in parent.timers:
             if should_exist:
                 raise RuntimeError(
                     'Could not find timer {0}'.format(
                         '.'.join(self.stack + [identifier])))
             parent.timers[identifier] = _HierarchicalHelper()
-            return parent.timers[identifier]
+        return parent.timers[identifier]
 
     def start(self, identifier):
         """
@@ -371,10 +366,10 @@ class HierarchicalTimer(object):
 
     def _get_identifier_len(self):
         stage_timers = list(self.timers.items())
-        stage_lengths = list()
+        stage_lengths = []
 
-        while len(stage_timers) > 0:
-            new_stage_timers = list()
+        while stage_timers:
+            new_stage_timers = []
             max_len = 0
             for identifier, timer in stage_timers:
                 new_stage_timers.extend(timer.timers.items())
@@ -416,8 +411,8 @@ class HierarchicalTimer(object):
         """
         Completely reset the timer.
         """
-        self.stack = list()
-        self.timers = dict()
+        self.stack = []
+        self.timers = {}
 
     def _get_timer_from_stack(self, stack):
         """
@@ -490,11 +485,10 @@ class HierarchicalTimer(object):
         parent = self._get_timer_from_stack(stack[:-1])
         if parent is self:
             return self.get_total_percent_time(identifier)
+        if parent.total_time > 0:
+            return timer.total_time / parent.total_time * 100
         else:
-            if parent.total_time > 0:
-                return timer.total_time / parent.total_time * 100
-            else:
-                return float('nan')
+            return float('nan')
 
     def get_total_percent_time(self, identifier):
         """
@@ -512,10 +506,5 @@ class HierarchicalTimer(object):
         """
         stack = identifier.split('.')
         timer = self._get_timer_from_stack(stack)
-        total_time = 0
-        for _timer in self.timers.values():
-            total_time += _timer.total_time
-        if total_time > 0:
-            return timer.total_time / total_time * 100
-        else:
-            return float('nan')
+        total_time = sum(_timer.total_time for _timer in self.timers.values())
+        return timer.total_time / total_time * 100 if total_time > 0 else float('nan')

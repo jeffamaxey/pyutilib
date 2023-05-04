@@ -12,9 +12,8 @@ def median(mylist):
     """
     Returns the median value of a list
     """
-    mylist = list(mylist)
-    mylist.sort()
-    if (len(mylist) == 0):
+    mylist = sorted(mylist)
+    if not mylist:
         raise ArithmeticError(
             "Attempting to compute the median of a zero-length list")
     elif (len(mylist) == 1):

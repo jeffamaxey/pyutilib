@@ -269,9 +269,7 @@ class ValueVisitor(object):
         # ignore the is_leaf() method and implement this
         # method separately for a specific application.
         #
-        if not self.is_leaf(node):
-            return False, None
-        return True, self.visit(node, None)
+        return (True, self.visit(node, None)) if self.is_leaf(node) else (False, None)
 
     def dfs_postorder_deque(self, node):
         """

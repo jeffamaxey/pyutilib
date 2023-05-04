@@ -38,9 +38,7 @@ class TaskG(pyutilib.workflow.Task):
 
     def execute(self):
         """Compute the sum of the inputs."""
-        self.z = {}
-        for key in self.x:
-            self.z[ self.x[key] ] = self.y[key]
+        self.z = {self.x[key]: self.y[key] for key in self.x}
 
 F1 = TaskF1()
 F2 = TaskF2()

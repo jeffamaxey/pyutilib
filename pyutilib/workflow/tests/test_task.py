@@ -36,11 +36,10 @@ class TestData(unittest.TestCase):
         data.c.y = 2
         data.aa = 'here is more'
         data.clean()
-        pyutilib.misc.setup_redirect(currdir + 'test1.out')
+        pyutilib.misc.setup_redirect(f'{currdir}test1.out')
         print(data)
         pyutilib.misc.reset_redirect()
-        self.assertFileEqualsBaseline(currdir + 'test1.out',
-                                      currdir + 'test1.txt')
+        self.assertFileEqualsBaseline(f'{currdir}test1.out', f'{currdir}test1.txt')
         self.assertEquals(len(data._dirty_), 0)
 
     @unittest.skipIf(not json_available, "JSON not available")
@@ -54,11 +53,9 @@ class TestData(unittest.TestCase):
         data.c.y = 2
         data['aa'] = 'here is more'
         data.clean()
-        FILE = open(currdir + 'test2.out', 'w')
-        json.dump(data, FILE)
-        FILE.close()
-        self.assertMatchesJsonBaseline(currdir + 'test2.out',
-                                       currdir + 'test2.txt')
+        with open(f'{currdir}test2.out', 'w') as FILE:
+            json.dump(data, FILE)
+        self.assertMatchesJsonBaseline(f'{currdir}test2.out', f'{currdir}test2.txt')
         self.assertEquals(len(data._dirty_), 0)
 
     @unittest.expectedFailure
@@ -98,7 +95,7 @@ class TestAPI(unittest.TestCase):
     def tearDownClass(cls):
         # Re-enable the pyutilib.workflow logging handler
         logger.removeHandler(handler)
-        if not cls._handler is None:
+        if cls._handler is not None:
             logger.addHandler(cls._handler)
 
     def test1(self):

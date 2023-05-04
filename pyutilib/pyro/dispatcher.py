@@ -81,7 +81,7 @@ class Dispatcher(base):
         if name not in self._registered_workers:
             raise ValueError("Worker name '%s' has not been registered")
         if self._verbose:
-            print("Unregistering worker with name: %s" % (name))
+            print(f"Unregistering worker with name: {name}")
         self._registered_workers.remove(name)
 
     @oneway
@@ -105,9 +105,9 @@ class Dispatcher(base):
     @oneway
     def add_tasks(self, tasks):
         if self._verbose:
-            print("Received request to add bulk task set. Task ids=%s" % (dict(
-                (task_type, [task['id'] for task in tasks[task_type]])
-                for task_type in tasks)))
+            print(
+                f"Received request to add bulk task set. Task ids={{task_type: [task['id'] for task in tasks[task_type]] for task_type in tasks}}"
+            )
         for task_type in tasks:
             task_queue = self._task_queue[task_type]
             for task in tasks[task_type]:
@@ -126,10 +126,9 @@ class Dispatcher(base):
     @oneway
     def add_results(self, results):
         if self._verbose:
-            print("Received request to add bulk result set for task ids=%s" %
-                  (dict((result_type, [result['id']
-                                       for result in results[result_type]])
-                        for result_type in results)))
+            print(
+                f"Received request to add bulk result set for task ids={{result_type: [result['id'] for result in results[result_type]] for result_type in results}}"
+            )
         for result_type in results:
             result_queue = self._result_queue[result_type]
             for result in results[result_type]:
@@ -208,11 +207,10 @@ class Dispatcher(base):
         if name in self._registered_workers:
             raise ValueError("Worker name '%s' has already been registered")
         if (self._worker_limit is None) or \
-           (len(self._registered_workers) < self._worker_limit):
+               (len(self._registered_workers) < self._worker_limit):
             self._registered_workers.add(name)
             if self._verbose:
-                print("Registering worker %s with name: %s" %
-                      (len(self._registered_workers), name))
+                print(f"Registering worker {len(self._registered_workers)} with name: {name}")
             return True
         return False
 
@@ -222,8 +220,7 @@ class Dispatcher(base):
                   "queue type=" + str(type) + "; block=" + str(block) +
                   "; timeout=" + str(timeout) + " seconds")
         try:
-            task = self._task_queue[type].get(block=block, timeout=timeout)
-            return task
+            return self._task_queue[type].get(block=block, timeout=timeout)
         except Queue.Empty:
             return None
 
@@ -247,7 +244,7 @@ class Dispatcher(base):
                             block=block, timeout=timeout))
                     except Queue.Empty:
                         pass
-            if len(task_list) > 0:
+            if task_list:
                 ret.setdefault(type, []).extend(task_list)
 
         return ret
@@ -282,7 +279,7 @@ class Dispatcher(base):
                             block=block, timeout=timeout))
                     except Queue.Empty:
                         pass
-            if len(result_list) > 0:
+            if result_list:
                 ret.setdefault(type_name, []).extend(result_list)
 
         return ret
@@ -303,16 +300,11 @@ class Dispatcher(base):
         if self._verbose:
             print("Received request for the set of queues with results")
 
-        results = []
-        #
-        # Iterate over a copy of the contents of the queue, since
-        # the queue may change while iterating.
-        #
-        for queue_name, result_queue in list(self._result_queue.items()):
-            if result_queue.qsize() > 0:
-                results.append(queue_name)
-
-        return results
+        return [
+            queue_name
+            for queue_name, result_queue in list(self._result_queue.items())
+            if result_queue.qsize() > 0
+        ]
 
     def get_results_all_queues(self):
 
@@ -373,23 +365,22 @@ def DispatcherServer(group=":PyUtilibServer",
         except _pyro.errors.NamingError:
             pass
         try:
-            ns.createGroup(group + ".dispatcher")
+            ns.createGroup(f"{group}.dispatcher")
         except _pyro.errors.NamingError:
             pass
         if clear_group:
             try:
-                ns.unregister(group + ".dispatcher")
+                ns.unregister(f"{group}.dispatcher")
             except _pyro.errors.NamingError:
                 pass
-    else:
-        if clear_group:
-            try:
-                ns.remove(group + ".dispatcher")
-            except _pyro.errors.NamingError:
-                pass
+    elif clear_group:
+        try:
+            ns.remove(f"{group}.dispatcher")
+        except _pyro.errors.NamingError:
+            pass
 
     disp = Dispatcher(verbose=verbose, worker_limit=worker_limit)
-    proxy_name = group + ".dispatcher." + str(uuid.uuid4())
+    proxy_name = f"{group}.dispatcher.{str(uuid.uuid4())}"
     if using_pyro3:
         uri = daemon.connect(disp, proxy_name)
     else:

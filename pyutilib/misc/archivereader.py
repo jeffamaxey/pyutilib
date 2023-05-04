@@ -67,9 +67,16 @@ except NameError:
 
 def ArchiveReaderFactory(dirname, **kwds):
     if not os.path.exists(ArchiveReader.normalize_name(dirname)):
-        raise IOError("Cannot find file or directory `" + dirname +
-                      "'\nPath expanded to: '" + ArchiveReader.normalize_name(
-                          dirname) + "'")
+        raise IOError(
+            (
+                (
+                    f"Cannot find file or directory `{dirname}"
+                    + "'\nPath expanded to: '"
+                )
+                + ArchiveReader.normalize_name(dirname)
+                + "'"
+            )
+        )
     if ArchiveReader.isDir(dirname):
         return DirArchiveReader(dirname, **kwds)
     elif zipfile_available and ArchiveReader.isZip(dirname):
@@ -111,11 +118,14 @@ class ArchiveReader(object):
 
     @staticmethod
     def isArchivedFile(name):
-        return (not (ArchiveReader.isDir(name) or ArchiveReader.isFile(name))) and \
-            (tarfile_available and ArchiveReader.isTar(name)) or \
-            (zipfile_available and ArchiveReader.isZip(name)) or \
-            (gzip_available and ArchiveReader.isGzipFile(name)) or \
-            (bz2_available and ArchiveReader.isBZ2File(name))
+        return (
+            not ArchiveReader.isDir(name)
+            and not ArchiveReader.isFile(name)
+            and (tarfile_available and ArchiveReader.isTar(name))
+            or (zipfile_available and ArchiveReader.isZip(name))
+            or (gzip_available and ArchiveReader.isGzipFile(name))
+            or (bz2_available and ArchiveReader.isBZ2File(name))
+        )
 
     @staticmethod
     def isGzipFile(name):
@@ -165,8 +175,7 @@ class ArchiveReader(object):
     def __init__(self, name, *args, **kwds):
         posixabsname = self.normalize_name(name)
         if not os.path.exists(posixabsname):
-            raise IOError("cannot find file or directory `" + posixabsname +
-                          "'")
+            raise IOError(f"cannot find file or directory `{posixabsname}'")
 
         self._abspath = os.path.dirname(posixabsname)
         self._basename = os.path.basename(posixabsname)
@@ -179,7 +188,7 @@ class ArchiveReader(object):
         self._filter = kwds.pop('filter', None)
 
         self._subdir = posixpath.normpath(ArchiveReader._posix_name(subdir))+_sep \
-                       if (subdir is not None) else None
+                           if (subdir is not None) else None
 
         self._maxdepth = maxdepth
         if (self._maxdepth is not None) and (self._maxdepth < 0):
@@ -196,7 +205,7 @@ class ArchiveReader(object):
 
         if self._filter is not None:
             self._names_list = [_f for _f in self._names_list \
-                                if not self._filter(_f)]
+                                    if not self._filter(_f)]
 
     def name(self):
         return self._archive_name
@@ -245,13 +254,14 @@ class ArchiveReader(object):
 
     def _validate_name(self, name):
         name = self._posix_name(name)
-        if (name is None) and (len(self._names_list) == 0):
-            raise KeyError("The archive is empty!")
-        elif (name is None) and (len(self._names_list) > 1):
-            raise KeyError("A name argument is required when "
-                           "the archive has more than one member")
-        elif name is None:
-            name = self._names_list[0]
+        if name is None:
+            if len(self._names_list) == 0:
+                raise KeyError("The archive is empty!")
+            elif len(self._names_list) > 1:
+                raise KeyError("A name argument is required when "
+                               "the archive has more than one member")
+            else:
+                name = self._names_list[0]
 
         if name in self._artificial_dirs:
             return None, name
@@ -276,7 +286,7 @@ class ArchiveReader(object):
             msg = ("There is no item named '%s' in "
                    "the archive %s" % (name, self._basename))
             if self._subdir is not None:
-                msg += ", subdirectory: " + self._subdir
+                msg += f", subdirectory: {self._subdir}"
             raise KeyError(msg)
         absname = name if (self._subdir is None) else self._subdir + name
         return absname, name
@@ -310,10 +320,7 @@ class ArchiveReader(object):
                    *args,
                    **kwds):
         names = None
-        if members is not None:
-            names = set(members)
-        else:
-            names = set(self._names_list)
+        names = set(members) if members is not None else set(self._names_list)
         # Save the expense checking recursions if there is no point
         if len(names) == len(self._names_list):
             recursive = False
@@ -349,11 +356,7 @@ class ArchiveReader(object):
                 maxdepth -= 1
 
             names = os.listdir(src)
-            if ignores is not None:
-                ignored_names = ignores
-            else:
-                ignored_names = set()
-
+            ignored_names = ignores if ignores is not None else set()
             for name in names:
                 srcname = posixpath.join(src, name)
                 if srcname in ignored_names:
@@ -411,9 +414,8 @@ class _ziptar_base(ArchiveReader):
                 self._handler.extract(absolute_name, self._workdir)
             except KeyError:  # sometimes directories need an _sep ending
                 self._handler.extract(absolute_name + _sep, self._workdir)
-        else:
-            if not os.path.exists(tmp_dst):
-                os.makedirs(tmp_dst)
+        elif not os.path.exists(tmp_dst):
+            os.makedirs(tmp_dst)
 
         dst = tmp_dst
         if path is not None:
@@ -434,7 +436,7 @@ class _ziptar_base(ArchiveReader):
         children = []
         if os.path.isdir(dst) and recursive:
             new_names = [relname for relname in self._names_list \
-                         if relname.startswith(relative_name)]
+                             if relname.startswith(relative_name)]
             if relative_name in new_names:
                 new_names.remove(relative_name)
             for childname in new_names:
@@ -458,12 +460,11 @@ class ZipArchiveReader(_ziptar_base):
         assert (self._archive_name is not None)
 
         if not self.isZip(self._archive_name):
-            raise TypeError("Unrecognized zipfile format for file: %s" %
-                            (self._archive_name))
+            raise TypeError(f"Unrecognized zipfile format for file: {self._archive_name}")
 
         self._handler = zipfile.ZipFile(self._archive_name, *args, **kwds)
         self._names_list, self._fulldepth_names_list, self._subdir_depth = \
-            self._fixnames(self._handler.namelist(), self._subdir, self._maxdepth)
+                self._fixnames(self._handler.namelist(), self._subdir, self._maxdepth)
 
     def _openImp(self, absolute_name, relative_name, *args, **kwds):
         f = None
@@ -489,22 +490,23 @@ class TarArchiveReader(_ziptar_base):
         assert (self._archive_name is not None)
 
         if not self.isTar(self._archive_name):
-            raise TypeError("Unrecognized tarfile format for file: %s" %
-                            (self._archive_name))
+            raise TypeError(f"Unrecognized tarfile format for file: {self._archive_name}")
 
         self._handler = tarfile.open(self._archive_name, *args, **kwds)
         self._names_list, self._fulldepth_names_list, self._subdir_depth = \
-            self._fixnames(self._handler.getnames(), self._subdir, self._maxdepth)
+                self._fixnames(self._handler.getnames(), self._subdir, self._maxdepth)
 
     def _openImp(self, absolute_name, relative_name, *args, **kwds):
-        f = None
         if absolute_name is not None:
             f = self._handler.extractfile(absolute_name, *args, **kwds)
+        else:
+            f = None
         if f is None:
             # when this method is called we have already verified the name
             # existed in the list, so this must be a directory
-            raise IOError("Failed to open with tarfile, this must be a "
-                          "directory: %s" % (absolute_name))
+            raise IOError(
+                f"Failed to open with tarfile, this must be a directory: {absolute_name}"
+            )
         return f
 
 
@@ -526,16 +528,15 @@ class DirArchiveReader(ArchiveReader):
                              (type(self).__name__, ','.join(args)))
 
         if not self.isDir(self._archive_name):
-            raise TypeError("Path not recognized as a directory: %s" %
-                            (self._archive_name))
+            raise TypeError(f"Path not recognized as a directory: {self._archive_name}")
 
         rootdir = self._archive_name
         if self._subdir is not None:
             rootdir = posixpath.join(rootdir, self._subdir)
             if not os.path.exists(rootdir):
                 raise IOError(
-                    "Subdirectory '%s' does not exists in root directory: %s" %
-                    (self._subdir, self._archive_name))
+                    f"Subdirectory '{self._subdir}' does not exists in root directory: {self._archive_name}"
+                )
             self._names_list = self._walk(rootdir, maxdepth=self._maxdepth + 1)
         else:
             self._names_list = self._walk(rootdir, maxdepth=self._maxdepth)
@@ -550,12 +551,10 @@ class DirArchiveReader(ArchiveReader):
                 prefix = prefix[:-1]
             if prefix == '.':
                 prefix = ''
-            for dname in dirs:
-                names_list.append(posixpath.join(prefix, dname))
+            names_list.extend(posixpath.join(prefix, dname) for dname in dirs)
             if maxdepth is not None and prefix.count(_sep) >= maxdepth:
                 continue
-            for fname in files:
-                names_list.append(posixpath.join(prefix, fname))
+            names_list.extend(posixpath.join(prefix, fname) for fname in files)
         return names_list
 
     def _extractImp(self, absolute_name, relative_name, path, recursive):
@@ -617,8 +616,7 @@ class FileArchiveReader(ArchiveReader):
                              "'%s'" % (type(self).__name__))
 
         if not self.isFile(self._archive_name):
-            raise TypeError("Path does not point to a file: %s" %
-                            (self._archive_name))
+            raise TypeError(f"Path does not point to a file: {self._archive_name}")
         extract_name = self._extract_name(self._basename)
         if extract_name is not None:
             self._names_list = [extract_name]
@@ -658,10 +656,7 @@ class GzipFileArchiveReader(FileArchiveReader):
     def _extract_name(self, name):
         # see the man page for gzip
         basename, ext = os.path.splitext(name)
-        if ext == self._suffix:
-            return basename
-        else:
-            return None
+        return basename if ext == self._suffix else None
 
     def __init__(self, *args, **kwds):
         if not gzip_available:
@@ -669,8 +664,7 @@ class GzipFileArchiveReader(FileArchiveReader):
         self._suffix = kwds.pop('suffix', '.gz')
         super(GzipFileArchiveReader, self).__init__(*args, **kwds)
         if not self.isGzipFile(self._archive_name):
-            raise TypeError("Unrecognized gzip format for file: %s" %
-                            (self._archive_name))
+            raise TypeError(f"Unrecognized gzip format for file: {self._archive_name}")
 
     def _extractImp(self, absolute_name, relative_name, path, recursive):
         if self._extract_name is None:
@@ -694,14 +688,13 @@ class BZ2FileArchiveReader(FileArchiveReader):
         if ext in ('.bz2', '.bz'):
             return basename
         elif ext in ('.tbz2', '.tbz'):
-            return basename + '.tar'
+            return f'{basename}.tar'
         else:
-            return name + '.out'
+            return f'{name}.out'
 
     def __init__(self, *args, **kwds):
         if not bz2_available:
             raise ImportError("bz2 support is disabled")
         super(BZ2FileArchiveReader, self).__init__(*args, **kwds)
         if not self.isBZ2File(self._archive_name):
-            raise TypeError("Unrecognized bzip2 format for file: %s" %
-                            (self._archive_name))
+            raise TypeError(f"Unrecognized bzip2 format for file: {self._archive_name}")

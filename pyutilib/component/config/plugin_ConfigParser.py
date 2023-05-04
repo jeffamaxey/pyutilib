@@ -44,15 +44,16 @@ class Configuration_ConfigParser(ManagedSingletonPlugin):
         """Returns a list of tuples: [ (section,option,value) ]"""
         parser = _configParser()
         if not os.path.exists(filename):
-            raise ConfigurationError("File " + filename + " does not exist!")
+            raise ConfigurationError(f"File {filename} does not exist!")
         parser.read(filename)
         #
         # Collect data
         #
         data = []
         for section in parser.sections():
-            for (option, value) in parser.items(section):
-                data.append((section, option, value))
+            data.extend(
+                (section, option, value) for option, value in parser.items(section)
+            )
         return data
 
     def save(self, filename, config, header=None):
@@ -62,9 +63,8 @@ class Configuration_ConfigParser(ManagedSingletonPlugin):
             if not parser.has_section(section):
                 parser.add_section(section)
             parser.set(section, option, str(value))
-        OUTPUT = open(filename, "w")
-        if not header is None:
-            for line in header.split("\n"):
-                OUTPUT.write("; " + line + '\n')
-        parser.write(OUTPUT)
-        OUTPUT.close()
+        with open(filename, "w") as OUTPUT:
+            if header is not None:
+                for line in header.split("\n"):
+                    OUTPUT.write(f"; {line}" + '\n')
+            parser.write(OUTPUT)

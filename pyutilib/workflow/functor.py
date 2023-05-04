@@ -31,7 +31,7 @@ class FunctorAPIData(dict):
 
     def unused(self):
         for k, v in self.__dict__.items():
-            if not k in self._dirty_:
+            if k not in self._dirty_:
                 yield k
 
     def declare(self, args):
@@ -51,21 +51,21 @@ class FunctorAPIData(dict):
 
     def __setattr__(self, name, val):
         if name[0] != '_':
-            if len(self._declared_) > 0 and not name in self._declared_:
-                raise AttributeError("Undeclared attribute '%s'" % name)
+            if len(self._declared_) > 0 and name not in self._declared_:
+                raise AttributeError(f"Undeclared attribute '{name}'")
             self._dirty_.add(name)
             dict.__setitem__(self, name, val)
         self.__dict__[name] = val
 
     def __getattr__(self, name):
-        if len(self._declared_) > 0 and not name in self._declared_:
-            raise AttributeError("Undeclared attribute '%s'" % name)
+        if len(self._declared_) > 0 and name not in self._declared_:
+            raise AttributeError(f"Undeclared attribute '{name}'")
         try:
             self._dirty_.add(name)
             return dict.__getitem__(self, name)
         except:
             if name[0] == '_':
-                raise AttributeError("Unknown attribute %s" % name)
+                raise AttributeError(f"Unknown attribute {name}")
         return None
 
     def __repr__(self):
@@ -81,7 +81,7 @@ class FunctorAPIData(dict):
                     text.append('\n')
                     text.append(v.__str__(nesting + 1))
                 else:
-                    text.append(' ' + str(v))
+                    text.append(f' {str(v)}')
                 attrs.append("".join(text))
         attrs.sort()
         return "\n".join(attrs)
@@ -109,7 +109,7 @@ class FunctorTask(TaskPlugin):
         # Process data
         #
         data = self._kwds.get('data', None)
-        if not data is None and type(data) is dict:
+        if data is not None and type(data) is dict:
             _data = FunctorAPIData()
             _data.update(data)
             self._kwds['data'] = _data
@@ -121,7 +121,7 @@ class FunctorTask(TaskPlugin):
         def nested_lookup(kwds, lookup):
             lookups = lookup.split('.')
             obj = kwds[lookups[0]]
-            if not data is None and lookups[0] == 'data':
+            if data is not None and lookups[0] == 'data':
                 data.declare(lookups[1])
             for key in lookups[1:]:
                 #print key, obj
@@ -133,12 +133,9 @@ class FunctorTask(TaskPlugin):
             try:
                 nested_lookup(self._kwds, name)
             except ValueError:
-                raise RuntimeError("None value found for nested attribute '%s'"
-                                   % name)
+                raise RuntimeError(f"None value found for nested attribute '{name}'")
             except:
-                raise RuntimeError(
-                    "Failed to verify existence of nested attribute '%s'" %
-                    name)
+                raise RuntimeError(f"Failed to verify existence of nested attribute '{name}'")
         #
         # Call _fn
         #
@@ -154,7 +151,7 @@ class FunctorTask(TaskPlugin):
         if retval is None or id(data) == id(retval):
             self._retval = FunctorAPIData(data=data)
         elif isinstance(retval, FunctorAPIData):
-            if not id(data) == id(retval):
+            if id(data) != id(retval):
                 retval.data = data
             self._retval = retval
         elif isinstance(retval, dict):
@@ -168,8 +165,8 @@ class FunctorTask(TaskPlugin):
         self.reset()
 
     def _call_init(self, *options, **kwds):
-        if not 'data' in kwds:
-            if len(options) > 0:
+        if 'data' not in kwds:
+            if options:
                 if len(options) > 1:
                     raise RuntimeError(
                         "A FunctorTask instance can only be executed with a single non-keyword argument")
@@ -183,10 +180,10 @@ class FunctorTask(TaskPlugin):
 
     def _call_fini(self, *options, **kwds):
         for key in self._retval:
-            if not key in self.outputs:
+            if key not in self.outputs:
                 raise RuntimeError(
-                    "Cannot return value '%s' that is not a predefined output of a Functor task"
-                    % key)
+                    f"Cannot return value '{key}' that is not a predefined output of a Functor task"
+                )
             setattr(self, key, self._retval[key])
         TaskPlugin._call_fini(self, *options, **kwds)
         return self._retval
@@ -202,35 +199,38 @@ def functor_api(fn=None, implements=None, outputs=None, namespace=None):
             logger.error("Error applying decorator.  No function value!")
             return
 
-        if namespace is None:
-            _alias = fn.__name__
-        else:
-            _alias = namespace + '.' + fn.__name__
+        _alias = fn.__name__ if namespace is None else f'{namespace}.{fn.__name__}'
         _name = _alias.replace('_', '.')
 
         argspec = inspect.getargspec(fn)
-        if not argspec.varargs is None:
+        if argspec.varargs is not None:
             logger.error(
-                "Attempting to declare Functor task with function '%s' that contains variable arguments"
-                % _alias)
+                f"Attempting to declare Functor task with function '{_alias}' that contains variable arguments"
+            )
             return  #pragma:nocover
-        if not argspec.keywords is None:
+        if argspec.keywords is not None:
             logger.error(
-                "Attempting to declare Functor task with function '%s' that contains variable keyword arguments"
-                % _alias)
+                f"Attempting to declare Functor task with function '{_alias}' that contains variable keyword arguments"
+            )
             return  #pragma:nocover
 
         if _alias in FunctorAPIFactory.services():
             logger.error(
-                "Cannot define API %s, since this API name is already defined" %
-                _alias)
+                f"Cannot define API {_alias}, since this API name is already defined"
+            )
             return  #pragma:nocover
+
+
 
         class TaskMeta(pyutilib.component.core.PluginMeta):
 
             def __new__(cls, name, bases, d):
                 return pyutilib.component.core.PluginMeta.__new__(
-                    cls, "FunctorTask_" + str(_name), bases, d)
+                    cls, f"FunctorTask_{str(_name)}", bases, d
+                )
+
+
+
 
         class FunctorTask_tmp(FunctorTask):
 
@@ -243,7 +243,7 @@ def functor_api(fn=None, implements=None, outputs=None, namespace=None):
             def __init__(self, *args, **kwargs):
                 kwargs['fn'] = fn
                 FunctorTask.__init__(self, *args, **kwargs)
-                if not fn is None:
+                if fn is not None:
                     if len(argspec.args) == 0:
                         nargs = 0
                     elif argspec.defaults is None:
@@ -252,8 +252,7 @@ def functor_api(fn=None, implements=None, outputs=None, namespace=None):
                         nargs = len(argspec.args) - len(argspec.defaults)
                     self._kwargs = argspec.args[nargs:]
                     if nargs != 1 and 'data' not in self._kwargs:
-                        logger.error("Functor '%s' must have a 'data argument" %
-                                     _alias)
+                        logger.error(f"Functor '{_alias}' must have a 'data argument")
                     if argspec.defaults is None:
                         _defaults = {}
                     else:
@@ -281,24 +280,17 @@ def functor_api(fn=None, implements=None, outputs=None, namespace=None):
                             self.inputs.declare(
                                 name, doc=docinfo['required'][name])
                         elif name != 'data':
-                            logger.error(
-                                "Argument '%s' is not specified in the docstring!"
-                                % name)
+                            logger.error(f"Argument '{name}' is not specified in the docstring!")
                     #
                     self.outputs.declare(
                         'data', doc='A container of labeled data.')
-                    if outputs is None:
-                        _outputs = list(docinfo['return'].keys())
-                    else:
-                        _outputs = outputs
+                    _outputs = list(docinfo['return'].keys()) if outputs is None else outputs
                     for name in _outputs:
                         if name in docinfo['return']:
                             self.outputs.declare(
                                 name, doc=docinfo['return'][name])
                         else:
-                            logger.error(
-                                "Return value '%s' is not specified in the docstring!"
-                                % name)
+                            logger.error(f"Return value '{name}' is not specified in the docstring!")
                     #
                     self._nested_requirements = []
                     for name in docinfo['required']:
@@ -310,20 +302,20 @@ def functor_api(fn=None, implements=None, outputs=None, namespace=None):
                     for name in docinfo['required']:
                         if '.' in name:
                             continue
-                        if not name in self.inputs:
+                        if name not in self.inputs:
                             logger.error(
-                                "Unexpected name '%s' in list of required inputs for functor '%s'"
-                                % (name, _alias))
+                                f"Unexpected name '{name}' in list of required inputs for functor '{_alias}'"
+                            )
                     for name in docinfo['optional']:
-                        if not name in self.inputs:
+                        if name not in self.inputs:
                             logger.error(
-                                "Unexpected name '%s' in list of optional inputs for functor '%s'"
-                                % (name, _alias))
+                                f"Unexpected name '{name}' in list of optional inputs for functor '{_alias}'"
+                            )
                     for name in docinfo['return']:
-                        if not name in self.outputs:
+                        if name not in self.outputs:
                             logger.error(
-                                "Unexpected name '%s' in list of outputs for functor '%s'"
-                                % (name, _alias))
+                                f"Unexpected name '{name}' in list of outputs for functor '{_alias}'"
+                            )
                     #
                     self.__help__ = fn.__doc__
                     self.__doc__ = fn.__doc__
@@ -331,21 +323,21 @@ def functor_api(fn=None, implements=None, outputs=None, namespace=None):
                     self.__long_doc__ = docinfo['long_doc'].strip()
                     self.__namespace__ = namespace
 
+
         return FunctorTask_tmp()
 
-    if fn is None:
-        return my_decorator
-    return my_decorator(fn)
+    return my_decorator if fn is None else my_decorator(fn)
 
 
 def parse_docstring(fn):
     """Parse a function docstring for information about the function arguments and return values"""
-    retval = {}
-    retval['short_doc'] = ""
-    retval['long_doc'] = None
-    retval['required'] = {}
-    retval['optional'] = {}
-    retval['return'] = {}
+    retval = {
+        'short_doc': "",
+        'long_doc': None,
+        'required': {},
+        'optional': {},
+        'return': {},
+    }
     curr = None
     doc = inspect.getdoc(fn)
     if doc is None:
@@ -353,11 +345,11 @@ def parse_docstring(fn):
         return retval
     for line in doc.split('\n'):
         line = line.strip()
-        if line == 'Required:' or line == 'Required Arguments:':
+        if line in ['Required:', 'Required Arguments:']:
             curr = 'required'
-        elif line == 'Optional:' or line == 'Optimal Arguments:':
+        elif line in ['Optional:', 'Optimal Arguments:']:
             curr = 'optional'
-        elif line == 'Return Values:' or line == 'Return:' or line == 'Returned:':
+        elif line in ['Return Values:', 'Return:', 'Returned:']:
             curr = 'return'
         elif curr is None:
             if retval['long_doc'] is None:

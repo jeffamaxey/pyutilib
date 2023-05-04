@@ -6,9 +6,9 @@ class TestHierarchicalTimer(unittest.TestCase):
     def test_hierarchical_timer(self):
         timer = HierarchicalTimer()
         timer.start('all')
-        for i in range(10):
+        for _ in range(10):
             timer.start('a')
-            for i in range(5):
+            for _ in range(5):
                 timer.start('aa')
                 timer.stop('aa')
             timer.start('ab')

@@ -32,13 +32,11 @@ class Test(pyutilib.th.TestCase):
         #
         pyutilib.subprocess.run(
             [sys.executable, currdir + os.sep + "egg1.py", currdir, "json"])
-        self.assertMatchesJsonBaseline(currdir + "egg1.out",
-                                       currdir + "egg1.jsn")
+        self.assertMatchesJsonBaseline(f"{currdir}egg1.out", f"{currdir}egg1.jsn")
         if yaml_available:
             pyutilib.subprocess.run(
                 [sys.executable, currdir + os.sep + "egg1.py", currdir, "yaml"])
-            self.assertMatchesYamlBaseline(currdir + "egg1.out",
-                                           currdir + "egg1.yml")
+            self.assertMatchesYamlBaseline(f"{currdir}egg1.out", f"{currdir}egg1.yml")
 
     def test_egg2(self):
         #
@@ -48,13 +46,11 @@ class Test(pyutilib.th.TestCase):
         #
         pyutilib.subprocess.run(
             [sys.executable, currdir + os.sep + "egg2.py", currdir, "json"])
-        self.assertMatchesJsonBaseline(currdir + "egg2.out",
-                                       currdir + "egg2.jsn")
+        self.assertMatchesJsonBaseline(f"{currdir}egg2.out", f"{currdir}egg2.jsn")
         if yaml_available:
             pyutilib.subprocess.run(
                 [sys.executable, currdir + os.sep + "egg2.py", currdir, "yaml"])
-            self.assertMatchesYamlBaseline(currdir + "egg2.out",
-                                           currdir + "egg2.yml")
+            self.assertMatchesYamlBaseline(f"{currdir}egg2.out", f"{currdir}egg2.yml")
 
 if __name__ == "__main__":
     unittest.main()

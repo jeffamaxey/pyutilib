@@ -23,14 +23,14 @@ class ExampleTestDriver(pyutilib.autotest.TestDriverBase):
 
     def run_test(self, testcase, name, options):
         """Execute a single test in the suite"""
-        name = options.suite+'_'+name
-        cmd = options.solver+' '
-        if not options.cat_options is None:
-            cmd += options.cat_options+' '
+        name = f'{options.suite}_{name}'
+        cmd = f'{options.solver} '
+        if options.cat_options is not None:
+            cmd += f'{options.cat_options} '
         cmd += options.file
-        print( "Running test suite '%s'  test '%s'  command '%s'" % \
-                (options.suite, name, cmd))
-        pyutilib.subprocess.run(cmd, outfile=options.currdir+'test_'+name+".out")
+        print(f"Running test suite '{options.suite}'  test '{name}'  command '{cmd}'")
+        pyutilib.subprocess.run(cmd, outfile=f'{options.currdir}test_{name}.out')
         testcase.failUnlessFileEqualsBaseline(
-                options.currdir+'test_'+name+".out",
-                options.currdir+'test_'+name+".txt")
+            f'{options.currdir}test_{name}.out',
+            f'{options.currdir}test_{name}.txt',
+        )

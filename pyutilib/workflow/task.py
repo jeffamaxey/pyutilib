@@ -25,25 +25,19 @@ class Task(object):
 
     def __init__(self, id=None, name=None, parser=None):
         """Constructor."""
-        if not id is None:
-            self.id = id
-        else:
-            self.id = globals.unique_id()
-        if name is None:
-            self.name = "Task" + str(self.id)
-        else:
-            self.name = name
+        self.id = id if id is not None else globals.unique_id()
+        self.name = f"Task{str(self.id)}" if name is None else name
         self.inputs = InputPorts(self)
-        self.inputs.set_name(self.name + "-inputs")
+        self.inputs.set_name(f"{self.name}-inputs")
         self.outputs = OutputPorts(self)
-        self.outputs.set_name(self.name + "-outputs")
+        self.outputs.set_name(f"{self.name}-outputs")
         self._resources = {}
         self._predecessors = []
         self._create_parser(parser)
         self.input_controls = InputPorts(self)
-        self.input_controls.set_name(self.name + '-input-controls')
+        self.input_controls.set_name(f'{self.name}-input-controls')
         self.output_controls = OutputPorts(self)
-        self.output_controls.set_name(self.name + '-output-controls')
+        self.output_controls.set_name(f'{self.name}-output-controls')
         self.debug = False
 
     def add_resource(self, resource):
@@ -56,38 +50,46 @@ class Task(object):
 
     def next_tasks(self):
         """Return the set of tasks that succeed this task in the workflow."""
-        return set(t.to_port.task()
-                   for name in self.outputs
-                   for t in self.outputs[name].output_connections) | set(
-                       t.to_port.task()
-                       for name in self.output_controls
-                       for t in self.output_controls[name].output_connections)
+        return {
+            t.to_port.task()
+            for name in self.outputs
+            for t in self.outputs[name].output_connections
+        } | {
+            t.to_port.task()
+            for name in self.output_controls
+            for t in self.output_controls[name].output_connections
+        }
 
     def prev_tasks(self):
         """Return the set of tasks that precede this task in the workflow."""
-        return set([task
-                    for name in self.inputs
-                    for task in self.inputs[name].from_tasks()
-                    if task.id != NoTask.id]) | set(
-                        task for task in self._predecessors) | set(
-                            [task
-                             for name in self.input_controls
-                             for task in self.input_controls[name].from_tasks()
-                             if task.id != NoTask.id])
+        return (
+            {
+                task
+                for name in self.inputs
+                for task in self.inputs[name].from_tasks()
+                if task.id != NoTask.id
+            }
+            | set(self._predecessors)
+        ) | {
+            task
+            for name in self.input_controls
+            for task in self.input_controls[name].from_tasks()
+            if task.id != NoTask.id
+        }
 
     def next_task_ids(self):
         """Return the set of ids for tasks that succeed this task in the workflow."""
-        return set(task.id for task in self.next_tasks())
+        return {task.id for task in self.next_tasks()}
 
     def prev_task_ids(self):
         """Return the set of ids for tasks that precede this task in the workflow."""
-        return set(task.id for task in self.prev_tasks())
+        return {task.id for task in self.prev_tasks()}
 
     def execute(self, debug=False):
         """Execute this task."""
         raise ValueError(
-            "There is no default execution for an abstract Task object! Task=%s"
-            % self._name())  #pragma:nocover
+            f"There is no default execution for an abstract Task object! Task={self._name()}"
+        )
 
     def busy_resources(self):
         """Return the list of resources that this task is waiting for."""
@@ -105,11 +107,7 @@ class Task(object):
                 #print "FALSE - input", name
                 #print self.inputs[name]
                 return False
-        for name in self.input_controls:
-            if not self.input_controls[name].ready():
-                #print "FALSE - control", name
-                return False
-        return True
+        return all(self.input_controls[name].ready() for name in self.input_controls)
 
     def busy(self):
         """Return the list of resources that this task is waiting for."""
@@ -129,8 +127,7 @@ class Task(object):
         self._call_start()
         busy = self.busy_resources()
         if len(busy) > 0:
-            raise IOError("Cannot execute task %s.  Busy resources: %s" %
-                          (self.name, str(busy)))
+            raise IOError(f"Cannot execute task {self.name}.  Busy resources: {str(busy)}")
         # Set inputs
         for opt in options:
             self._set_inputs(opt)
@@ -202,26 +199,24 @@ class Task(object):
 
     def _create_parser(self, parser=None):
         """Create the OptionParser object and populate it with option groups."""
-        if parser is None:
-            self._parser = argparse.ArgumentParser()
-        else:
-            self._parser = parser
+        self._parser = argparse.ArgumentParser() if parser is None else parser
         self._parser_arg = []
         self._parser_group = {}
         self._create_parser_groups()
-        for key in self._parser_group:
-            self._parser.add_argument_group(self._parser_group[key])
+        for value in self._parser_group.values():
+            self._parser.add_argument_group(value)
 
     def _create_parser_groups(self):
         """This method is called by the _create_parser method to setup the
         parser groups that are registered for this task."""
 
     def _repn_(self):
-        tmp = {}
-        tmp['A_TYPE'] = 'Task'
-        tmp['Name'] = self.name
-        tmp['Id'] = self.id
-        tmp['Inputs'] = self.inputs._repn_()
+        tmp = {
+            'A_TYPE': 'Task',
+            'Name': self.name,
+            'Id': self.id,
+            'Inputs': self.inputs._repn_(),
+        }
         tmp['Outputs'] = self.outputs._repn_()
         tmp['InputControls'] = self.input_controls._repn_()
         tmp['OutputControls'] = self.output_controls._repn_()
@@ -236,10 +231,7 @@ class Task(object):
         return pprint.pformat(self._repn_(), 2)
 
     def _name(self):
-        return "%s prev: %s next: %s resources: %s" % (
-            str(self.name), str(sorted(list(self.prev_task_ids()))),
-            str(sorted(list(self.next_task_ids()))),
-            str(sorted(self._resources.keys())))
+        return f"{str(self.name)} prev: {str(sorted(list(self.prev_task_ids())))} next: {str(sorted(list(self.next_task_ids())))} resources: {str(sorted(self._resources.keys()))}"
 
     def reset(self):
         #print "RESETING "+self.name
@@ -299,11 +291,8 @@ def define_connection(cls, from_port, to_port):
     #
     if to_port.action == 'store' and len(to_port.input_connections) == 1:
         raise ValueError(
-            "Cannot connect to task %s port %s from task %s port %s. This port is already connected from task %s port %s"
-            %
-            (to_port.task().name, to_port.name, from_port.task().name,
-             from_port.name, to_port.input_connections[0].from_port.task().name,
-             to_port.input_connections[0].from_port.name))
+            f"Cannot connect to task {to_port.task().name} port {to_port.name} from task {from_port.task().name} port {from_port.name}. This port is already connected from task {to_port.input_connections[0].from_port.task().name} port {to_port.input_connections[0].from_port.name}"
+        )
     #
     #print 'connecting',from_port.task.id, to_port.task.id
     connector = cls(from_port=from_port, to_port=to_port)
@@ -327,10 +316,7 @@ class Port(object):
         self.name = name
         # tasks are stored as weak refs, to prevent issues with cyclic dependencies and the garbage collector.
         self.task = weakref.ref(task)
-        if action is None:
-            self.action = 'store'
-        else:
-            self.action = action
+        self.action = 'store' if action is None else action
         self.optional = optional
         self.constant = constant
         self.input_connections = []
@@ -355,9 +341,7 @@ class Port(object):
 
     def get_value(self):
         """Get the value of this port."""
-        if self.value is None:
-            return self.default
-        return self.value
+        return self.default if self.value is None else self.value
 
     def set_value(self, value):
         """Set the value of this port."""
@@ -369,7 +353,7 @@ class Port(object):
         if self.action == 'store':
             if len(self.input_connections) == 1:
                 val = self.input_connections[0].get_value()
-                if not val is None:
+                if val is not None:
                     self.value = val
 
         elif self.action == 'store_any':
@@ -377,7 +361,7 @@ class Port(object):
                 if not connection.ready():
                     continue
                 val = connection.get_value()
-                if not val is None:
+                if val is not None:
                     self.value = val
                     break
 
@@ -385,18 +369,18 @@ class Port(object):
             tmp = []
             for connection in self.input_connections:
                 val = connection.get_value()
-                if not val is None:
+                if val is not None:
                     tmp.append(val)
-            if len(tmp) > 0:
+            if tmp:
                 self.value = tmp
 
         elif self.action in ['map', 'map_any']:
             tmp = {}
             for connection in self.input_connections:
                 val = connection.get_value()
-                if not val is None:
+                if val is not None:
                     tmp[connection.from_port.task().id] = val
-            if len(tmp) > 0:
+            if tmp:
                 self.value = tmp
 
         self.validate()
@@ -405,38 +389,30 @@ class Port(object):
         if self.action in ['store', 'store_any']:
             if not self.optional and self.get_value() is None:
                 raise ValueError(
-                    "Task %s Port %s requires a nontrivial value.  Value specified is None."
-                    % (str(self.task().id), self.name))
-        #
+                    f"Task {str(self.task().id)} Port {self.name} requires a nontrivial value.  Value specified is None."
+                )
         elif self.action in ['append', 'append_any']:
             if not self.optional and self.get_value() is None:
                 raise ValueError(
-                    "Task %s Port %s requires a nontrivial value.  All input connections have value None."
-                    % (str(self.task().id), self.name))
-        #
+                    f"Task {str(self.task().id)} Port {self.name} requires a nontrivial value.  All input connections have value None."
+                )
         elif self.action in ['map', 'map_any']:
             if not self.optional and self.get_value() is None:
                 raise ValueError(
-                    "Task %s Port %s requires a nontrivial value.  All input connections have value None."
-                    % (str(self.task().id), self.name))
+                    f"Task {str(self.task().id)} Port {self.name} requires a nontrivial value.  All input connections have value None."
+                )
 
     def _repn_(self):
-        tmp = {}
-        tmp['A_TYPE'] = 'Port'
-        tmp['Name'] = self.name
-        tmp['Task'] = str(self.task().id)
+        tmp = {'A_TYPE': 'Port', 'Name': self.name, 'Task': str(self.task().id)}
         tmp['Optional'] = str(self.optional)
         tmp['Constant'] = str(self.constant)
         tmp['Value'] = str(self.value)
         tmp['Ready'] = str(self.ready())
         tmp['Action'] = self.action
-        tmp['Connections'] = {}
-        tmp['Connections']['Inputs'] = []
+        tmp['Connections'] = {'Inputs': []}
         for c in self.input_connections:
             tmp['Connections']['Inputs'].append(repr(c))
-        tmp['Connections']['Outputs'] = []
-        for c in self.output_connections:
-            tmp['Connections']['Outputs'].append(repr(c))
+        tmp['Connections']['Outputs'] = [repr(c) for c in self.output_connections]
         return tmp
 
     def __repr__(self):
@@ -446,27 +422,20 @@ class Port(object):
         return pprint.pformat(self._repn_(), 2)  #pragma:nocover
 
     def ready(self):
-        if not self.get_value() is None:
+        if self.get_value() is not None:
             return True
         if len(self.input_connections) == 0:
             return self._ready
         if self.action == 'store':
             return self.input_connections[0].ready()
         elif self.action in ['append_any', 'map_any', 'store_any']:
-            for connection in self.input_connections:
-                if connection.ready():
-                    return True
-            return False
+            return any(connection.ready() for connection in self.input_connections)
         elif self.action in ['append', 'map']:
-            for connection in self.input_connections:
-                if not connection.ready():
-                    return False
-            return True
+            return all(connection.ready() for connection in self.input_connections)
         #
         # We should never get here.
         #
-        raise IOError(
-            "WARNING: unknown action: " + self.action)  #pragma:nocover
+        raise IOError(f"WARNING: unknown action: {self.action}")
 
     def set_ready(self):
         self._ready = True
@@ -525,31 +494,26 @@ class Ports(dict):
         #
         # Declare a port
         #
-        if not name in self.__dict__:
+        if name not in self.__dict__:
             if not isinstance(val, Port):
-                raise TypeError(
-                    "Error declaring port '%s' without a Port object" % name)
+                raise TypeError(f"Error declaring port '{name}' without a Port object")
             dict.__setitem__(self, name, val)
             self.__dict__[name] = val
-        #
-        # Create a connection to another port
-        #
+        elif isinstance(val, Port):
+            self.__dict__[name].connect(val)
+
         else:
-            if not isinstance(val, Port):
-                self.__dict__[name].set_value(val)
-            else:
-                self.__dict__[name].connect(val)
+            self.__dict__[name].set_value(val)
 
     def __getattr__(self, name):
         """Overload this operator to setup a connection."""
         try:
             return self.__dict__.__getitem__(name)
         except:
-            raise AttributeError("Unknown attribute '%s'" % name)
+            raise AttributeError(f"Unknown attribute '{name}'")
 
     def _repn_(self):
-        tmp = {}
-        tmp['A_TYPE'] = 'Port'
+        tmp = {'A_TYPE': 'Port'}
         for k, v in self.__dict__.items():
             if not k.startswith("_"):
                 tmp[k] = v._repn_()
@@ -564,11 +528,11 @@ class Ports(dict):
             tmp['Owner'] = self._task()._name()
         return tmp
 
-    def __repr__(self):  #pragma:nocover
+    def __repr__(self):    #pragma:nocover
         """Return a string representation of these connections."""
         attrs = sorted("%s = %r" % (k, v) for k, v in self.__dict__.items()
                        if not k.startswith("_"))
-        return "%s(%s)" % (self.__class__.__name__, ", ".join(attrs))
+        return f'{self.__class__.__name__}({", ".join(attrs)})'
 
     def __str__(self, nesting=1, indent='', print_name=True):
         return pprint.pformat(self._repn_(), 2, width=150)
@@ -596,14 +560,8 @@ class Connector(object):
 
     def __init__(self, from_port=None, to_port=None):
         """Constructor."""
-        if from_port is None:
-            self.from_port = NoTask  #pragma:nocover
-        else:
-            self.from_port = from_port
-        if to_port is None:
-            self.to_port = NoTask  #pragma:nocover
-        else:
-            self.to_port = to_port
+        self.from_port = NoTask if from_port is None else from_port
+        self.to_port = NoTask if to_port is None else to_port
 
     def get_value(self):
         raise ValueError(
@@ -618,9 +576,7 @@ class Connector(object):
 
     def __str__(self):
         """Return a string representation for this connection."""
-        return "%s: from=(%s) to=(%s) %s" % (
-            str(self.__class__.__name__), str(self.from_port.task().id),
-            str(self.to_port.task().id), self.ready())
+        return f"{str(self.__class__.__name__)}: from=({str(self.from_port.task().id)}) to=({str(self.to_port.task().id)}) {self.ready()}"
 
 
 class DirectConnector(Connector):
@@ -629,9 +585,7 @@ class DirectConnector(Connector):
         Connector.__init__(self, from_port=from_port, to_port=to_port)
 
     def get_value(self):
-        if self.ready():
-            return self.from_port.get_value()
-        return None
+        return self.from_port.get_value() if self.ready() else None
 
 # A task instance that represents no task.
 NoTask = EmptyTask(id=0)

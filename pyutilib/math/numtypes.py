@@ -18,7 +18,7 @@ import math
 """ Definition of infinity """
 infinity = float('inf')
 """ Definition of NaN """
-nan = infinity / infinity
+nan = 1.0
 
 def is_nan(x):
     """

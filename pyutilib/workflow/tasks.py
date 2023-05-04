@@ -71,12 +71,15 @@ class Switch_Task(TaskPlugin):
         self.inputs.declare('value')
 
     def add_branch(self, value, task):
-        self._branches[value] = 'task' + str(task.id)
+        self._branches[value] = f'task{str(task.id)}'
         self.output_controls.declare(self._branches[value])
 
-        task.input_controls.declare('task' + str(self.id))
-        setattr(task.input_controls, 'task' + str(self.id),
-                self.output_controls[self._branches[value]])
+        task.input_controls.declare(f'task{str(self.id)}')
+        setattr(
+            task.input_controls,
+            f'task{str(self.id)}',
+            self.output_controls[self._branches[value]],
+        )
 
     def execute(self):
         flag = False

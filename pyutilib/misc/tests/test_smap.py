@@ -22,7 +22,7 @@ class Test(unittest.TestCase):
         smap = pyutilib.misc.SparseMapping(a=1, b=2)
         self.assertEqual(len(smap), 2)
         self.assertTrue('a' in smap)
-        data = [key for key in smap]
+        data = list(smap)
         self.assertEqual(sorted(data), ['a', 'b'])
         try:
             smap['c']
@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
         smap = pyutilib.misc.SparseMapping(a=1, b=2, index=['a', 'b', 'z'])
         self.assertEqual(len(smap), 2)
         self.assertTrue('a' in smap)
-        data = [key for key in smap]
+        data = list(smap)
         self.assertEqual(sorted(data), ['a', 'b'])
         try:
             smap['c']
@@ -70,7 +70,7 @@ class Test(unittest.TestCase):
             a=1, b=2, index=['a', 'b', 'z'], default=0)
         self.assertEqual(len(smap), 3)
         self.assertTrue('a' in smap)
-        data = [key for key in smap]
+        data = list(smap)
         self.assertEqual(sorted(data), ['a', 'b', 'z'])
         try:
             smap['c']
@@ -95,7 +95,7 @@ class Test(unittest.TestCase):
         smap = pyutilib.misc.SparseMapping(a=1, b=2, default=0)
         self.assertEqual(len(smap), 2)
         self.assertTrue('a' in smap)
-        data = [key for key in smap]
+        data = list(smap)
         self.assertEqual(sorted(data), ['a', 'b'])
         self.assertEqual(smap['c'], 0)
         self.assertEqual(smap['a'], 1)
@@ -116,7 +116,7 @@ class Test(unittest.TestCase):
         smap = pyutilib.misc.SparseMapping(a=1, b=2, within=range(10))
         self.assertEqual(len(smap), 2)
         self.assertTrue('a' in smap)
-        data = [key for key in smap]
+        data = list(smap)
         self.assertEqual(sorted(data), ['a', 'b'])
         try:
             smap['c']

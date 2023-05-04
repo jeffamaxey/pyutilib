@@ -17,7 +17,7 @@ from pyutilib.workflow import tasks
 class TaskDriver(object):
 
     def __init__(self, **kwargs):
-        if not 'formatter_class' in kwargs:
+        if 'formatter_class' not in kwargs:
             kwargs['formatter_class'] = argparse.RawDescriptionHelpFormatter
         self.parser = argparse.ArgumentParser(**kwargs)
         #self.parser.add_argument('--help-commands', dest='help_commands', action='store_true', default=False, help="Print a list of available subcommands")

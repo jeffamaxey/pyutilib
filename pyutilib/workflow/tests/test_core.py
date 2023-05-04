@@ -290,12 +290,10 @@ Task7 prev: [1] next: [] resources: []""")
         A = TaskA()
         B = TaskB()
         A.inputs.x = B.outputs.b
-        OUTPUT = open(currdir + 'test3.out', 'w')
-        OUTPUT.write(str(A.inputs) + '\n')
-        OUTPUT.write(str(A.outputs) + '\n')
-        OUTPUT.close()
-        self.assertFileEqualsBaseline(currdir + 'test3.out',
-                                      currdir + 'test3.txt')
+        with open(f'{currdir}test3.out', 'w') as OUTPUT:
+            OUTPUT.write(str(A.inputs) + '\n')
+            OUTPUT.write(str(A.outputs) + '\n')
+        self.assertFileEqualsBaseline(f'{currdir}test3.out', f'{currdir}test3.txt')
 
     def test4(self):
         # Do we really want to be testing pformat output?  I think we might
@@ -305,11 +303,9 @@ Task7 prev: [1] next: [] resources: []""")
         A = TaskA()
         A.inputs['x'] = 2
         self.assertEqual(A.inputs['x'].get_value(), 2)
-        OUTPUT = open(currdir + 'test4.out', 'w')
-        OUTPUT.write(str(A) + '\n')
-        OUTPUT.close()
-        self.assertFileEqualsBaseline(currdir + 'test4.out',
-                                      currdir + 'test4.txt')
+        with open(f'{currdir}test4.out', 'w') as OUTPUT:
+            OUTPUT.write(str(A) + '\n')
+        self.assertFileEqualsBaseline(f'{currdir}test4.out', f'{currdir}test4.txt')
 
     def test5(self):
         pyutilib.workflow.globals.reset_id_counter()
@@ -367,11 +363,9 @@ Task7 prev: [1] next: [] resources: []""")
         w.add(A)
         w.set_options(['--i=3', '--a=2'])
         w()
-        OUTPUT = open(currdir + 'test5b.out', 'w')
-        OUTPUT.write(str(w) + '\n')
-        OUTPUT.close()
-        self.assertFileEqualsBaseline(currdir + 'test5b.out',
-                                      currdir + 'test5b.txt')
+        with open(f'{currdir}test5b.out', 'w') as OUTPUT:
+            OUTPUT.write(str(w) + '\n')
+        self.assertFileEqualsBaseline(f'{currdir}test5b.out', f'{currdir}test5b.txt')
 
     def test_error1(self):
         pyutilib.workflow.globals.reset_id_counter()

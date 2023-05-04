@@ -21,15 +21,14 @@ class Test_Runtests(unittest.TestCase):
             os.environ['PYUTILIB_UNITTEST_CATEGORY'] = oldCat
 
         if rc:
-            self.fail("running nosetests failed (rc=%s)" % (rc,))
+            self.fail(f"running nosetests failed (rc={rc})")
 
         result = []
         for line in stream_out.getvalue().splitlines():
             if '...' not in line:
                 continue
-            g = re.match('(\S+) \(([^\)]+)\)', line)
-            if g:
-                result.append("%s.%s" % (g.group(2), g.group(1)))
+            if g := re.match('(\S+) \(([^\)]+)\)', line):
+                result.append(f"{g[2]}.{g[1]}")
         return result
 
     def test_all(self):

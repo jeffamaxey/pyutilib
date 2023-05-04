@@ -16,9 +16,10 @@ if service is None:
 #logging.basicConfig(level=logging.DEBUG)
 #
 pyutilib.component.core.PluginGlobals.get_env().load_services(
-    path=[currdir + "eggs1", currdir + "eggs2"])
+    path=[f"{currdir}eggs1", f"{currdir}eggs2"]
+)
 #
-pyutilib.misc.setup_redirect(currdir + "egg2.out")
+pyutilib.misc.setup_redirect(f"{currdir}egg2.out")
 if sys.argv[-1] == 'json':
     pyutilib.component.core.PluginGlobals.pprint(json=True)
 else:

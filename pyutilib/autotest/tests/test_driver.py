@@ -46,9 +46,9 @@ class TestYaml(pyutilib.th.TestCase):
             self.skipTest("Skipping tests because running in Jython")
         self.t1 = os.environ.get('PYUTILIB_AUTOTEST_CATEGORIES', None)
         self.t2 = os.environ.get('PYUTILIB_UNITTEST_CATEGORIES', None)
-        if not self.t1 is None:
+        if self.t1 is not None:
             del os.environ['PYUTILIB_AUTOTEST_CATEGORIES']
-        if not self.t2 is None:
+        if self.t2 is not None:
             del os.environ['PYUTILIB_UNITTEST_CATEGORIES']
 
     def driver(self, *args):
@@ -57,42 +57,40 @@ class TestYaml(pyutilib.th.TestCase):
         pyutilib.autotest.run(tmp, {})
 
     def tearDown(self):
-        if not self.t1 is None:
+        if self.t1 is not None:
             os.environ['PYUTILIB_AUTOTEST_CATEGORIES'] = self.t1
-        if not self.t2 is None:
+        if self.t2 is not None:
             os.environ['PYUTILIB_UNITTEST_CATEGORIES'] = self.t2
 
     def test1(self):
         # run --help
-        setup_redirect(currdir + 'test1.out')
+        setup_redirect(f'{currdir}test1.out')
         self.driver('--help')
         reset_redirect()
         self.assertFileEqualsBaseline(
-            currdir + 'test1.out', currdir + 'test1.txt', filter=filter_t1)
+            f'{currdir}test1.out', f'{currdir}test1.txt', filter=filter_t1
+        )
 
     def test2(self):
         # run --help-suites example1.yml
-        setup_redirect(currdir + 'test2.out')
-        self.driver('--help-suites', currdir + 'example1.yml')
+        setup_redirect(f'{currdir}test2.out')
+        self.driver('--help-suites', f'{currdir}example1.yml')
         reset_redirect()
-        self.assertFileEqualsBaseline(currdir + 'test2.out',
-                                      currdir + 'test2.txt')
+        self.assertFileEqualsBaseline(f'{currdir}test2.out', f'{currdir}test2.txt')
 
     def test3(self):
         # run --help-categories example1.yml
-        setup_redirect(currdir + 'test3.out')
-        self.driver('--help-categories', currdir + 'example1.yml')
+        setup_redirect(f'{currdir}test3.out')
+        self.driver('--help-categories', f'{currdir}example1.yml')
         reset_redirect()
-        self.assertFileEqualsBaseline(currdir + 'test3.out',
-                                      currdir + 'test3.txt')
+        self.assertFileEqualsBaseline(f'{currdir}test3.out', f'{currdir}test3.txt')
 
     def test4(self):
         # run --help-tests suite1 example1.yml
-        setup_redirect(currdir + 'test4.out')
-        self.driver('--help-tests', 'suite1', currdir + 'example1.yml')
+        setup_redirect(f'{currdir}test4.out')
+        self.driver('--help-tests', 'suite1', f'{currdir}example1.yml')
         reset_redirect()
-        self.assertFileEqualsBaseline(currdir + 'test4.out',
-                                      currdir + 'test4.txt')
+        self.assertFileEqualsBaseline(f'{currdir}test4.out', f'{currdir}test4.txt')
 
     def test5(self):
         # run example1.yml
@@ -100,7 +98,8 @@ class TestYaml(pyutilib.th.TestCase):
                         [join(currdir,'example1.yml')],
                         outfile=join(currdir,'test5.out'))
         self.assertFileEqualsBaseline(
-            currdir + 'test5.out', currdir + 'test5.txt', filter=filter)
+            f'{currdir}test5.out', f'{currdir}test5.txt', filter=filter
+        )
 
     def test6(self):
         # run --cat x_suite2 --cat x_suite1 example1.yml
@@ -109,7 +108,8 @@ class TestYaml(pyutilib.th.TestCase):
                           join(currdir,'example1.yml') ],
                         outfile=join(currdir,'test6.out'))
         self.assertFileEqualsBaseline(
-            currdir + 'test6.out', currdir + 'test6.txt', filter=filter)
+            f'{currdir}test6.out', f'{currdir}test6.txt', filter=filter
+        )
 
 
 class TestJson(pyutilib.th.TestCase):
@@ -121,9 +121,9 @@ class TestJson(pyutilib.th.TestCase):
             self.skipTest("Skipping tests because JSON is not available")
         self.t1 = os.environ.get('PYUTILIB_AUTOTEST_CATEGORIES', None)
         self.t2 = os.environ.get('PYUTILIB_UNITTEST_CATEGORIES', None)
-        if not self.t1 is None:
+        if self.t1 is not None:
             del os.environ['PYUTILIB_AUTOTEST_CATEGORIES']
-        if not self.t2 is None:
+        if self.t2 is not None:
             del os.environ['PYUTILIB_UNITTEST_CATEGORIES']
 
     def driver(self, *args):
@@ -132,42 +132,40 @@ class TestJson(pyutilib.th.TestCase):
         pyutilib.autotest.run(tmp, {})
 
     def tearDown(self):
-        if not self.t1 is None:
+        if self.t1 is not None:
             os.environ['PYUTILIB_AUTOTEST_CATEGORIES'] = self.t1
-        if not self.t2 is None:
+        if self.t2 is not None:
             os.environ['PYUTILIB_UNITTEST_CATEGORIES'] = self.t2
 
     def test1(self):
         # run --help
-        setup_redirect(currdir + 'test1.out')
+        setup_redirect(f'{currdir}test1.out')
         self.driver('--help')
         reset_redirect()
         self.assertFileEqualsBaseline(
-            currdir + 'test1.out', currdir + 'test1.txt', filter=filter_t1)
+            f'{currdir}test1.out', f'{currdir}test1.txt', filter=filter_t1
+        )
 
     def test2(self):
         # run --help-suites example1.json
-        setup_redirect(currdir + 'test2.out')
-        self.driver('--help-suites', currdir + 'example1.json')
+        setup_redirect(f'{currdir}test2.out')
+        self.driver('--help-suites', f'{currdir}example1.json')
         reset_redirect()
-        self.assertFileEqualsBaseline(currdir + 'test2.out',
-                                      currdir + 'test2.txt')
+        self.assertFileEqualsBaseline(f'{currdir}test2.out', f'{currdir}test2.txt')
 
     def test3(self):
         # run --help-categories example1.json
-        setup_redirect(currdir + 'test3.out')
-        self.driver('--help-categories', currdir + 'example1.json')
+        setup_redirect(f'{currdir}test3.out')
+        self.driver('--help-categories', f'{currdir}example1.json')
         reset_redirect()
-        self.assertFileEqualsBaseline(currdir + 'test3.out',
-                                      currdir + 'test3.txt')
+        self.assertFileEqualsBaseline(f'{currdir}test3.out', f'{currdir}test3.txt')
 
     def test4(self):
         # run --help-tests suite1 example1.json
-        setup_redirect(currdir + 'test4.out')
-        self.driver('--help-tests', 'suite1', currdir + 'example1.json')
+        setup_redirect(f'{currdir}test4.out')
+        self.driver('--help-tests', 'suite1', f'{currdir}example1.json')
         reset_redirect()
-        self.assertFileEqualsBaseline(currdir + 'test4.out',
-                                      currdir + 'test4.txt')
+        self.assertFileEqualsBaseline(f'{currdir}test4.out', f'{currdir}test4.txt')
 
     def test5(self):
         # run example1.json
@@ -175,7 +173,8 @@ class TestJson(pyutilib.th.TestCase):
                         [join(currdir,'example1.json')],
                         outfile=join(currdir,'test5.out'))
         self.assertFileEqualsBaseline(
-            currdir + 'test5.out', currdir + 'test5.txt', filter=filter)
+            f'{currdir}test5.out', f'{currdir}test5.txt', filter=filter
+        )
 
     def test6(self):
         # run --cat x_suite2 --cat x_suite1 example1.json
@@ -184,7 +183,8 @@ class TestJson(pyutilib.th.TestCase):
                           join(currdir,'example1.json') ],
                         outfile=join(currdir,'test6.out'))
         self.assertFileEqualsBaseline(
-            currdir + 'test6.out', currdir + 'test6.txt', filter=filter)
+            f'{currdir}test6.out', f'{currdir}test6.txt', filter=filter
+        )
 
 
 if __name__ == "__main__":

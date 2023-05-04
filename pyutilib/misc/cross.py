@@ -20,14 +20,11 @@ def _cross_exec(set_tuple):
     """
     resulting_set = []
     if len(set_tuple) == 1:
-        for val in set_tuple[0]:
-            resulting_set.append([val])
+        resulting_set.extend([val] for val in set_tuple[0])
     else:
         tmp_set = _cross_exec(set_tuple[1:])
         for val in set_tuple[0]:
-            for item in tmp_set:
-                #print val, item
-                resulting_set.append([val] + item)
+            resulting_set.extend([val] + item for item in tmp_set)
     return resulting_set
 
 
@@ -35,11 +32,8 @@ def cross(set_tuple):
     """
     Returns the cross-product of a tuple of values
     """
-    result_set = []
     tmp_set = _cross_exec(set_tuple)
-    for val in tmp_set:
-        result_set.append(tuple(val))
-    return result_set
+    return [tuple(val) for val in tmp_set]
 
 #def tmp_cross(*args):
 #    ans = [[]]

@@ -7,6 +7,7 @@ Use the following command-line option with nosetests ::
 
 """
 
+
 __all__ = ['Timeout', 'TestTimeout']
 
 import os
@@ -15,12 +16,8 @@ from nose.plugins.base import Plugin
 try:
     from psutil import Process
     _psutil_avail = True
-except ImportError:
+except (ImportError, NotImplementedError):
     _psutil_avail = False
-except NotImplementedError:
-    _psutil_avail = False
-
-
 class Timeout(Exception):
     pass
 
@@ -73,9 +70,7 @@ class TestTimeout(Plugin):
         hour = int(self.timeout / 3600)
         min = int(self.timeout / 60) - hour * 60
         sec = self.timeout % 60
-        txt = ""
-        if hour:
-            txt = "%d hour%s" % (hour, hour > 1 and "s" or "")
+        txt = "%d hour%s" % (hour, hour > 1 and "s" or "") if hour else ""
         if min:
             if txt:
                 txt += ", "
@@ -84,4 +79,4 @@ class TestTimeout(Plugin):
             if txt:
                 txt += ", "
             txt += "%d second%s" % (sec, sec > 1 and "s" or "")
-        raise Timeout("Test exceeded timeout (%s)" % txt)
+        raise Timeout(f"Test exceeded timeout ({txt})")

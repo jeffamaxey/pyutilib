@@ -8,8 +8,9 @@ currdir = sys.argv[-2] + os.sep
 
 logging.basicConfig(level=logging.DEBUG)
 pyutilib.component.core.PluginGlobals.get_env().load_services(
-    path=currdir + "plugins1")
-pyutilib.misc.setup_redirect(currdir + "load1.out")
+    path=f"{currdir}plugins1"
+)
+pyutilib.misc.setup_redirect(f"{currdir}load1.out")
 if sys.argv[-1] == "json":
     pyutilib.component.core.PluginGlobals.pprint(json=True)
 else:

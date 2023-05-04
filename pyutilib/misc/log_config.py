@@ -111,7 +111,7 @@ class LogHandler(logging.Handler):
             except AttributeError:
                 function = '(unknown)'
             if self.basepath and filename.startswith(self.basepath):
-                filename = '[base]' + filename[len(self.basepath):]
+                filename = f'[base]{filename[len(self.basepath):]}'
 
             self.stream.write(
                 '%s: "%s", %d, %s\n' %
@@ -125,7 +125,7 @@ class LogHandler(logging.Handler):
             if paragraphs:
                 firstPar = ' '.join(paragraphs.pop(0)[1]).strip()
                 if level:
-                    firstPar = ('%s: %s' % (level, firstPar))
+                    firstPar = f'{level}: {firstPar}'
             else:
                 firstPar = level
             self.stream.write( '%s\n' % (
@@ -137,10 +137,7 @@ class LogHandler(logging.Handler):
             if not indent:
                 indent = ''
             # Bulleted lists get indented with a hanging indent
-            if par and len(par[0]) > 1 and par[0][0] in '-*':
-                hang = ' '*4
-            else:
-                hang = ''
+            hang = ' '*4 if par and len(par[0]) > 1 and par[0][0] in '-*' else ''
             self.stream.write( '%s\n' % (
                 textwrap.fill(
                     ' '.join(par),

@@ -4,9 +4,6 @@ import factor
 import pyutilib.pyro
 import sys
 
-if len(sys.argv) == 2:
-    host=sys.argv[1]
-else:
-    host=None
+host = sys.argv[1] if len(sys.argv) == 2 else None
 pyutilib.pyro.TaskWorkerServer(factor.FactorWorker, host=host)
 

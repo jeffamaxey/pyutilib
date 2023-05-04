@@ -37,9 +37,7 @@ try:
             return len(self._index)
 
         def __contains__(self, key):
-            if self._index is None:
-                return key in self._map
-            return key in self._index
+            return key in self._map if self._index is None else key in self._index
 
         def __iter__(self):
             if self._index is None or self.default is None:
@@ -49,21 +47,21 @@ try:
         def __getitem__(self, key):
             if key in self._map:
                 return self._map[key]
-            if not self.default is None and (self._index is None or
-                                             key in self._index):
+            if self.default is not None and (
+                self._index is None or key in self._index
+            ):
                 return self.default
-            if (self.default is None) and (not self._index is None) and (
-                    key in self._index):
+            if self.default is None and self._index is not None and key in self._index:
                 raise ValueError(
-                    "Legal key '%s' specified in SparseMapping, but value is uninitialized and there is no default value"
-                    % key)
-            raise KeyError("Unknown key value: %s" % str(key))
+                    f"Legal key '{key}' specified in SparseMapping, but value is uninitialized and there is no default value"
+                )
+            raise KeyError(f"Unknown key value: {str(key)}")
 
         def __setitem__(self, key, value):
-            if not self._index is None and not key in self._index:
-                raise KeyError("Unknown key value: %s" % str(key))
-            if not self.within is None and not value in self.within:
-                raise ValueError("Bad mapping value: %s" % str(value))
+            if self._index is not None and key not in self._index:
+                raise KeyError(f"Unknown key value: {str(key)}")
+            if self.within is not None and value not in self.within:
+                raise ValueError(f"Bad mapping value: {str(value)}")
             self._map[key] = value
 
         def index(self):
@@ -116,8 +114,9 @@ except ImportError:
                 return dict.__getitem__(self, key)
             except KeyError:
                 err = sys.exc_info()[1]
-                if not self.default is None and (self._index is None or
-                                                 key in self._index):
+                if self.default is not None and (
+                    self._index is None or key in self._index
+                ):
                     return self.default
                 raise err
 

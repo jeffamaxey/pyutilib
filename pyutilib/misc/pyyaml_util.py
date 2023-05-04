@@ -31,18 +31,15 @@ from pyutilib.misc.comparison import open_possibly_compressed_file
 
 def yaml_eval(str):
     try:
-        val = int(str)
-        return val
+        return int(str)
     except:
         pass
     try:
-        val = float(str)
-        return val
+        return float(str)
     except:
         pass
     try:
-        val = eval(str)
-        return val
+        return eval(str)
     except:
         pass
     return str
@@ -75,29 +72,28 @@ def recursive_yaml_parser(stream, _depth=-1):
             #depth = d
             if d < depth:
                 return data, line
-            if d >= depth:
-                if line[d] == '-':
-                    if data is None:
-                        data = []
-                    value = line[d + 1:].strip()
-                    if len(value) > 0:
-                        data.append(yaml_eval(value))
-                    else:
-                        value, line = recursive_yaml_parser(stream, d)
-                        flag = True
-                        data.append(value)
+            if line[d] == '-':
+                if data is None:
+                    data = []
+                value = line[d + 1:].strip()
+                if len(value) > 0:
+                    data.append(yaml_eval(value))
                 else:
-                    if data is None:
-                        data = {}
-                    tokens = line.split(':')
-                    key = tokens[0].strip()
-                    value = tokens[1].strip()
-                    if len(value) > 0:
-                        data[key] = yaml_eval(value)
-                    else:
-                        value, line = recursive_yaml_parser(stream, d)
-                        flag = True
-                        data[key] = value
+                    value, line = recursive_yaml_parser(stream, d)
+                    flag = True
+                    data.append(value)
+            else:
+                if data is None:
+                    data = {}
+                tokens = line.split(':')
+                key = tokens[0].strip()
+                value = tokens[1].strip()
+                if len(value) > 0:
+                    data[key] = yaml_eval(value)
+                else:
+                    value, line = recursive_yaml_parser(stream, d)
+                    flag = True
+                    data[key] = value
     return data, line
 
 
@@ -111,9 +107,7 @@ def simple_yaml_parser(stream):
 
 
 def yaml_fix(val):
-    if not isinstance(val, basestring):
-        return val
-    return val.replace(':', '\\x3a')
+    return val.replace(':', '\\x3a') if isinstance(val, basestring) else val
 
 
 def json_fix(val):
@@ -133,7 +127,7 @@ def extract_subtext(stream, begin_str='', end_str=None, comment='#'):
         tokens = re.split('[\t ]+', line.strip())
         if not status and line.startswith(begin_str):
             status = True
-        elif not end_str is None and end_str != '' and line.startswith(end_str):
+        elif end_str is not None and end_str != '' and line.startswith(end_str):
             break
         elif status:
             if tokens[0] != comment:
@@ -240,21 +234,20 @@ def compare_repn(baseline,
                     baseline[j],
                     output[i],
                     tolerance=tolerance,
-                    prefix=prefix + "[" + str(i) + "]",
+                    prefix=f"{prefix}[{i}]",
                     exact=exact,
-                    using_yaml=using_yaml)
+                    using_yaml=using_yaml,
+                )
                 j += 1
             except Exception:
                 msg = sys.exc_info()[1]
                 print(msg)
-                pass
             i += 1
         if j < len(baseline):
             raise IOError(
                 "(%s) Could not find item %d in output list:\nbaseline:\n%s\noutput:\n%s\nERROR: %s"
                 % (prefix, j, pprint.pformat(baseline), pprint.pformat(output),
                    msg))
-    #
     elif type(baseline) is dict or type(baseline) is OrderedDict:
         if exact and len(baseline.keys()) != len(output.keys()):
             raise IOError(
@@ -262,7 +255,7 @@ def compare_repn(baseline,
                 % (prefix, pprint.pformat(baseline.keys()),
                    pprint.pformat(output.keys())))
         for key in baseline:
-            if not key in output:
+            if key not in output:
                 raise IOError(
                     "(%s) Baseline key %s that does not exist in output:baseline:\n%s\noutput:\n%s"
                     % (prefix, key, pprint.pformat(baseline.keys()),
@@ -271,13 +264,13 @@ def compare_repn(baseline,
                 baseline[key],
                 output[key],
                 tolerance=tolerance,
-                prefix=prefix + "." + str(key),
+                prefix=f"{prefix}.{str(key)}",
                 exact=exact,
-                using_yaml=using_yaml)
-    #
+                using_yaml=using_yaml,
+            )
     elif (type(baseline) is float or type(output) is float
          ) and type(baseline) in [int, float] and type(output) in [int, float]:
-        if not tolerance is None and math.fabs(baseline - output) > tolerance:
+        if tolerance is not None and math.fabs(baseline - output) > tolerance:
             raise ValueError(
                 "(%s) Floating point values differ: baseline=%.17g and output=%.17g (tolerance=%.17g)"
                 % (prefix, baseline, output, tolerance))

@@ -48,8 +48,8 @@ class Test(unittest.TestCase):
         sys.stdout.flush()
         if ' ' in sys.executable:
             foo = SubprocessMngr(
-                "'" + sys.executable + "' -q -c \"while True: pass\"",
-                shell=False)
+                f"'{sys.executable}" + "' -q -c \"while True: pass\"", shell=False
+            )
         else:
             foo = SubprocessMngr(
                 sys.executable + " -q -c \"while True: pass\"",
@@ -73,18 +73,18 @@ class Test(unittest.TestCase):
         pyutilib.subprocess.run(
             pyutilib.services.registered_executable('ls').get_path() + ' *.py',
             memmon=True,
-            outfile=currdir + 'ls.out')
-        INPUT = open(currdir + 'ls.out', 'r')
-        flag = False
-        for line in INPUT:
-            flag = line.startswith('memmon:')
-            if flag:
-                break
-        INPUT.close()
+            outfile=f'{currdir}ls.out',
+        )
+        with open(f'{currdir}ls.out', 'r') as INPUT:
+            flag = False
+            for line in INPUT:
+                flag = line.startswith('memmon:')
+                if flag:
+                    break
         if not flag:
             self.fail(
                 "Failed to properly execute 'memmon' with the 'ls' command")
-        os.remove(currdir + 'ls.out')
+        os.remove(f'{currdir}ls.out')
 
     @unittest.skipIf(_mswindows,
                      "Cannot test the use of 'valgrind' on MS Windows")
@@ -95,26 +95,27 @@ class Test(unittest.TestCase):
         pyutilib.subprocess.run(
             pyutilib.services.registered_executable('ls').get_path() + ' *.py',
             valgrind=True,
-            outfile=currdir + 'valgrind.out')
-        INPUT = open(currdir + 'valgrind.out', 'r')
-        flag = False
-        for line in INPUT:
-            flag = 'Memcheck' in line
-            if flag:
-                break
-        INPUT.close()
+            outfile=f'{currdir}valgrind.out',
+        )
+        with open(f'{currdir}valgrind.out', 'r') as INPUT:
+            flag = False
+            for line in INPUT:
+                flag = 'Memcheck' in line
+                if flag:
+                    break
         if not flag:
             self.fail(
                 "Failed to properly execute 'valgrind' with the 'ls' command")
-        os.remove(currdir + 'valgrind.out')
+        os.remove(f'{currdir}valgrind.out')
 
     def test_outputfile(self):
-        pyutilib.subprocess.run([sys.executable, currdir + "tee_script.py"],
-                                outfile=currdir + 'tee.out')
-        INPUT = open(currdir + 'tee.out')
-        output = INPUT.read()
-        INPUT.close()
-        os.remove(currdir + 'tee.out')
+        pyutilib.subprocess.run(
+            [sys.executable, f"{currdir}tee_script.py"],
+            outfile=f'{currdir}tee.out',
+        )
+        with open(f'{currdir}tee.out') as INPUT:
+            output = INPUT.read()
+        os.remove(f'{currdir}tee.out')
         if _peek_available:
             self.assertEqual(
                 sorted(output.splitlines()),
@@ -128,7 +129,8 @@ class Test(unittest.TestCase):
     def test_ostream_stringio(self):
         script_out = six.StringIO()
         output = pyutilib.subprocess.run(
-            [sys.executable, currdir + "tee_script.py"], ostream=script_out)
+            [sys.executable, f"{currdir}tee_script.py"], ostream=script_out
+        )
 
         if _peek_available:
             self.assertEqual(
@@ -147,9 +149,10 @@ class Test(unittest.TestCase):
         script_out = six.StringIO()
         pyutilib.misc.setup_redirect(stream_out)
         output = pyutilib.subprocess.run(
-            [sys.executable, currdir + "tee_script.py"],
+            [sys.executable, f"{currdir}tee_script.py"],
             ostream=script_out,
-            tee=True)
+            tee=True,
+        )
         pyutilib.misc.reset_redirect()
         # The following is only deterministic if Peek/Select is available
         if _peek_available:
@@ -177,9 +180,10 @@ class Test(unittest.TestCase):
         script_out = six.StringIO()
         pyutilib.misc.setup_redirect(stream_out)
         output = pyutilib.subprocess.run(
-            [sys.executable, currdir + "tee_script.py"],
+            [sys.executable, f"{currdir}tee_script.py"],
             ostream=script_out,
-            tee=(True, False))
+            tee=(True, False),
+        )
         pyutilib.misc.reset_redirect()
         self.assertEqual(stream_out.getvalue().splitlines(),
                           ["Tee Script: OUT"])
@@ -202,9 +206,10 @@ class Test(unittest.TestCase):
         script_out = six.StringIO()
         pyutilib.misc.setup_redirect(stream_out)
         output = pyutilib.subprocess.run(
-            [sys.executable, currdir + "tee_script.py"],
+            [sys.executable, f"{currdir}tee_script.py"],
             ostream=script_out,
-            tee=(False, True))
+            tee=(False, True),
+        )
         pyutilib.misc.reset_redirect()
         self.assertEqual(stream_out.getvalue().splitlines(),
                           ["Tee Script: ERR"])

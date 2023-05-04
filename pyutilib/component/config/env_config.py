@@ -73,8 +73,11 @@ class EnvironmentConfig(Plugin):
         if "HOME" in os.environ:
             dir = os.path.normcase(
                 os.path.realpath(
-                    os.path.join(os.environ["HOME"], "." + self.namespace,
-                                 "plugins")))
+                    os.path.join(
+                        os.environ["HOME"], f".{self.namespace}", "plugins"
+                    )
+                )
+            )
             if os.path.exists(dir):
                 ans.append(dir)
         #
@@ -89,5 +92,5 @@ class EnvironmentConfig(Plugin):
             else:
                 ans += re.split('[ \t]+', tmp)
         if __debug__ and logger.isEnabledFor(logging.DEBUG):
-            logger.debug("Created load path: %s" % ans)
+            logger.debug(f"Created load path: {ans}")
         return ans

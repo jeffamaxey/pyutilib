@@ -89,7 +89,7 @@ class ExcelSpreadsheet_xlrd(ExcelSpreadsheet_base):
         """ Activate a specific sheet """
         if name is None:
             return
-        if not name in self._ws:
+        if name not in self._ws:
             raise ValueError("Cannot activate a missing sheet with xlrd")
         self.default_worksheet = name
 
@@ -145,7 +145,7 @@ class ExcelSpreadsheet_xlrd(ExcelSpreadsheet_base):
         Get values for a specified range
         """
         rangeid = self._range(rangename)
-        if not rangeid is None:
+        if rangeid is not None:
             return self._get_range_data(rangeid, raw)
 
     def _get_range_data(self, _range, raw):
@@ -155,22 +155,21 @@ class ExcelSpreadsheet_xlrd(ExcelSpreadsheet_base):
         sheet, rowxlo, rowxhi, colxlo, colxhi = _range.area2d()
         if (rowxhi - rowxlo) == 1 and (colxhi - colxlo) == 1:
             return self._translate(sheet.cell(rowxlo, colxlo))
-        else:
-            #
-            # If the range is a column or row of data, then return a list of values.
-            # Otherwise, return a tuple of tuples
-            #
-            ans = []
-            for i in range(rowxhi - rowxlo):
-                col = []
-                for j in range(colxhi - colxlo):
-                    val = self._translate(sheet.cell(i + rowxlo, j + colxlo))
-                    col.append(val)
-                if len(col) == 1:
-                    ans.append(col[0])
-                else:
-                    ans.append(list(col))
-            return list(ans)
+        #
+        # If the range is a column or row of data, then return a list of values.
+        # Otherwise, return a tuple of tuples
+        #
+        ans = []
+        for i in range(rowxhi - rowxlo):
+            col = []
+            for j in range(colxhi - colxlo):
+                val = self._translate(sheet.cell(i + rowxlo, j + colxlo))
+                col.append(val)
+            if len(col) == 1:
+                ans.append(col[0])
+            else:
+                ans.append(list(col))
+        return list(ans)
 
     def get_range_nrows(self, rangename, wsid=None):
         """
@@ -193,22 +192,14 @@ class ExcelSpreadsheet_xlrd(ExcelSpreadsheet_base):
         Return a range for a given worksheet
         """
         self.activate(wsid)
-        #
-        # If rangeid is a tuple, then this is a list of arguments to pass
-        # to the Range() method.
-        #
         if type(rangeid) is tuple:
             return self.ws().Range(*rangeid)
-        #
-        # Otherwise, we assume that this is a range name.
-        #
-        else:
-            tmp_ = self.wb.name_map.get(rangeid.lower(), None)
-            if tmp_ is None:
-                raise IOError("Range %s is not found" % rangeid)
-            if len(tmp_) > 1:
-                raise IOError("Cannot process scoped names")
-            return tmp_[0]
+        tmp_ = self.wb.name_map.get(rangeid.lower(), None)
+        if tmp_ is None:
+            raise IOError(f"Range {rangeid} is not found")
+        if len(tmp_) > 1:
+            raise IOError("Cannot process scoped names")
+        return tmp_[0]
 
     def _translate(self, cell):
         """
@@ -218,7 +209,7 @@ class ExcelSpreadsheet_xlrd(ExcelSpreadsheet_base):
             return ""
         if cell.ctype == 1:
             return str(cell.value)
-        if cell.ctype == 2 or cell.ctype == 3 or cell.ctype == 4:
+        if cell.ctype in [2, 3, 4]:
             return cell.value
         if cell.ctype == 6:
             return None

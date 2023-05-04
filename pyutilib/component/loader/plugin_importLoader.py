@@ -55,8 +55,7 @@ class ImportLoader(ManagedSingletonPlugin):
                     try:
                         module = imp.load_source(plugin_name, plugin_file)
                         if generate_debug_messages:
-                            env.log.debug('Loading file plugin %s from %s' % \
-                                  (plugin_name, plugin_file))
+                            env.log.debug(f'Loading file plugin {plugin_name} from {plugin_file}')
                     except Exception:
                         e = sys.exc_info()[1]
                         env.log.error(
@@ -67,22 +66,12 @@ class ImportLoader(ManagedSingletonPlugin):
                 #
                 # Disable singleton plugins that match
                 #
-                if not module is None:
-                    if not disable_re.match(plugin_name) is None:
+                if module is not None:
+                    if disable_re.match(plugin_name) is not None:
                         if generate_debug_messages:
-                            env.log.debug('Disabling services in module %s' %
-                                          plugin_name)
+                            env.log.debug(f'Disabling services in module {plugin_name}')
                         for item in dir(module):
-                            #
-                            # This seems like a hack, but
-                            # without this we can disable pyutilib
-                            # functionality!
-                            #
-                            flag = False
-                            for service in ImportLoader.ep_services:
-                                if service.ignore(item):
-                                    flag = True
-                                    break
+                            flag = any(service.ignore(item) for service in ImportLoader.ep_services)
                             if flag:
                                 continue
 
@@ -96,20 +85,19 @@ class ImportLoader(ManagedSingletonPlugin):
                             except TypeError:
                                 is_plugin = False
                             try:
-                                is_singleton = not (cls.__instance__ is None)
+                                is_singleton = cls.__instance__ is not None
                             except AttributeError:  #pragma:nocover
                                 is_singleton = False
                             if is_singleton and is_plugin:
                                 if generate_debug_messages:
-                                    env.log.debug('Disabling service %s' % item)
+                                    env.log.debug(f'Disabling service {item}')
                                 cls.__instance__._enable = False
                             if is_instance:
                                 if generate_debug_messages:
-                                    env.log.debug('Disabling service %s' % item)
+                                    env.log.debug(f'Disabling service {item}')
                                 cls._enable = False
                     elif generate_debug_messages:
-                        env.log.debug('All services in module %s are enabled' %
-                                      plugin_name)
+                        env.log.debug(f'All services in module {plugin_name} are enabled')
 
 # Copyright (C) 2005-2008 Edgewall Software
 # Copyright (C) 2005-2006 Christopher Lenz <cmlenz@gmx.de>

@@ -75,11 +75,11 @@ class PyPIDownloadAggregator(object):
         """Calculate the total number of downloads for the package"""
 
         urls = self.proxy.release_urls(release['name'], release['version'])
-        if not release['name'] in self._downloads:
+        if release['name'] not in self._downloads:
             self._downloads[release['name']] = OrderedDict()
-        if not release['name'] in self._first_upload:
+        if release['name'] not in self._first_upload:
             self._first_upload[release['name']] = OrderedDict()
-        if not release['name'] in self._last_upload:
+        if release['name'] not in self._last_upload:
             self._last_upload[release['name']] = OrderedDict()
         self._downloads[release['name']][release['version']] = 0
 
@@ -109,8 +109,7 @@ class PyPIDownloadAggregator(object):
 
         print("")
         for release in self.packages():
-            print("Processing ... %s %s" %
-                  (release['name'], release['version']))
+            print(f"Processing ... {release['name']} {release['version']}")
             self.downloads(release)
 
         for pkg in sorted(self._downloads.keys()):
@@ -192,10 +191,11 @@ def main():
     parser.add_option(
         '--exact', action="store_false", dest="exact", default=False)
     (options, args) = parser.parse_args(sys.argv)
-    if not options.date is None:
-        starttime = datetime.strptime(options.date, "%Y-%m-%d")
-    else:
-        starttime = None
+    starttime = (
+        None
+        if options.date is None
+        else datetime.strptime(options.date, "%Y-%m-%d")
+    )
     _main(args, options.exact)
 
 

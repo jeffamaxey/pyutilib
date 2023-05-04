@@ -405,9 +405,8 @@ def _dump(*args, **kwds):
         #dump = lambda x,**y: str(x)
         # YAML uses lowercase True/False
         def dump(x, **args):
-            if type(x) is bool:
-                return str(x).lower()
-            return str(x)
+            return str(x).lower() if type(x) is bool else str(x)
+
     assert '_dump' in globals()
     globals()['_dump'] = dump
     return dump(*args, **kwds)
@@ -599,16 +598,15 @@ class ConfigBase(object):
         # that code here.  Unfortunately, it means we need to do a bit
         # of logic to be sure we only pass through appropriate
         # arguments.
-        kwds = {}
-        kwds['description'] = ( self._description
-                                if description is ConfigBase.NoArgument else
-                                description )
-        kwds['doc'] = ( self._doc
-                        if doc is ConfigBase.NoArgument else
-                        doc )
-        kwds['visibility'] = ( self._visibility
-                               if visibility is ConfigBase.NoArgument else
-                               visibility )
+        kwds = {
+            'description': self._description
+            if description is ConfigBase.NoArgument
+            else description,
+            'doc': self._doc if doc is ConfigBase.NoArgument else doc,
+            'visibility': self._visibility
+            if visibility is ConfigBase.NoArgument
+            else visibility,
+        }
         if isinstance(self, ConfigDict):
             kwds['implicit'] = ( self._implicit_declaration
                                  if implicit is ConfigBase.NoArgument else
@@ -667,7 +665,7 @@ class ConfigBase(object):
             if self._name.startswith('[') or not pName:
                 return pName + self._name
             else:
-                return pName + '.' + self._name
+                return f'{pName}.{self._name}'
         else:
             return self._name
 
@@ -681,23 +679,23 @@ class ConfigBase(object):
     def _cast(self, value):
         if value is None:
             return value
-        if self._domain is not None:
-            try:
-                if value is not ConfigBase.NoArgument:
-                    return self._domain(value)
-                else:
-                    return self._domain()
-            except:
-                err = sys.exc_info()[1]
-                if hasattr(self._domain, '__name__'):
-                    _dom = self._domain.__name__
-                else:
-                    _dom = type(self._domain)
-                raise ValueError("invalid value for configuration '%s':\n"
-                                 "\tFailed casting %s\n\tto %s\n\tError: %s" %
-                                 (self.name(True), value, _dom, err))
-        else:
+        if self._domain is None:
             return value
+        try:
+            return (
+                self._domain(value)
+                if value is not ConfigBase.NoArgument
+                else self._domain()
+            )
+        except:
+            err = sys.exc_info()[1]
+            if hasattr(self._domain, '__name__'):
+                _dom = self._domain.__name__
+            else:
+                _dom = type(self._domain)
+            raise ValueError("invalid value for configuration '%s':\n"
+                             "\tFailed casting %s\n\tto %s\n\tError: %s" %
+                             (self.name(True), value, _dom, err))
 
     def reset(self):
         #
@@ -738,13 +736,13 @@ class ConfigBase(object):
             else:
                 kwds['action'] = 'store_false'
                 if not args:
-                    args = ('--disable-' + _munge_name(self.name()),)
+                    args = (f'--disable-{_munge_name(self.name())}', )
                 if 'help' not in kwds:
-                    kwds['help'] = "[DON'T] " + self._description
+                    kwds['help'] = f"[DON'T] {self._description}"
         if 'help' not in kwds:
             kwds['help'] = self._description
         if not args:
-            args = ('--' + _munge_name(self.name()),)
+            args = (f'--{_munge_name(self.name())}', )
         if self._argparse:
             self._argparse = self._argparse + ((args, kwds),)
         else:
@@ -799,11 +797,11 @@ class ConfigBase(object):
                 else:
                     _issub, _parser = _get_subparser_or_group(_parser, _group)
             if 'dest' not in _kwds:
-                _kwds['dest'] = 'CONFIGBLOCK.' + obj.name(True)
+                _kwds['dest'] = f'CONFIGBLOCK.{obj.name(True)}'
                 if 'metavar' not in _kwds and \
-                   _kwds.get('action','') not in ('store_true','store_false'):
+                       _kwds.get('action','') not in ('store_true','store_false'):
                     if obj._domain is not None and \
-                       obj._domain.__class__ is type:
+                           obj._domain.__class__ is type:
                         _kwds['metavar'] = obj._domain.__name__.upper()
                     else:
                         _kwds['metavar'] = _munge_name(self.name().upper(),
@@ -827,7 +825,7 @@ class ConfigBase(object):
                     if _dest in parsed_args:
                         obj.set_value(parsed_args.__dict__[_dest])
                 else:
-                    _dest = 'CONFIGBLOCK.' + obj.name(True)
+                    _dest = f'CONFIGBLOCK.{obj.name(True)}'
                     if _dest in parsed_args:
                         obj.set_value(parsed_args.__dict__[_dest])
                         del parsed_args.__dict__[_dest]
@@ -836,8 +834,9 @@ class ConfigBase(object):
     def display(self, content_filter=None, indent_spacing=2, ostream=None,
                 visibility=None):
         if content_filter not in ConfigDict.content_filters:
-            raise ValueError("unknown content filter '%s'; valid values are %s"
-                             % (content_filter, ConfigDict.content_filters))
+            raise ValueError(
+                f"unknown content filter '{content_filter}'; valid values are {ConfigDict.content_filters}"
+            )
 
         _blocks = []
         if ostream is None:
@@ -925,8 +924,7 @@ class ConfigBase(object):
             os.write('\n')
         return os.getvalue()
 
-    def generate_documentation\
-            ( self,
+    def generate_documentation( self,
               block_start= "\\begin{description}[topsep=0pt,parsep=0.5em,itemsep=-0.4em]\n",
               block_end=   "\\end{description}\n",
               item_start=  "\\item[{%s}]\\hfill\n",
@@ -940,7 +938,7 @@ class ConfigBase(object):
         level = []
         lastObj = self
         indent = ''
-        for lvl, pre, val, obj in self._data_collector(1, '', visibility, True):
+        for lvl, pre, val, obj in lastObj._data_collector(1, '', visibility, True):
             #print len(level), lvl, val, obj
             if len(level) < lvl:
                 while len(level) < lvl - 1:
@@ -965,13 +963,9 @@ class ConfigBase(object):
                 os.write(indent + item_start % obj.name())
             elif item_start:
                 os.write(indent + item_start)
-            _doc = obj._doc or obj._description or ""
-            if _doc:
+            if _doc := obj._doc or obj._description or "":
                 _wrapLines = '\n ' not in _doc
-                if '%s' in item_body:
-                    _doc = item_body % (_doc,)
-                elif _doc:
-                    _doc = item_body
+                _doc = item_body % (_doc,) if '%s' in item_body else item_body
                 if _wrapLines:
                     doc_lines = wrap(
                         _doc,
@@ -1071,7 +1065,7 @@ class ConfigValue(ConfigBase):
 class ImmutableConfigValue(ConfigValue):
     def set_value(self, value):
         if self._cast(value) != self._data:
-            raise RuntimeError(str(self) + ' is currently immutable')
+            raise RuntimeError(f'{str(self)} is currently immutable')
         super(ImmutableConfigValue, self).set_value(value)
 
     def reset(self):
@@ -1108,7 +1102,7 @@ class MarkImmutable(object):
     >>> locker.release_lock()
     """
     def __init__(self, *args):
-        self._locked = list()
+        self._locked = []
         try:
             for arg in args:
                 if type(arg) is not ConfigValue:
@@ -1122,7 +1116,7 @@ class MarkImmutable(object):
     def release_lock(self):
         for arg in self._locked:
             arg.__class__ = ConfigValue
-        self._locked = list()
+        self._locked = []
 
 
 class ConfigList(ConfigBase):
@@ -1168,9 +1162,7 @@ class ConfigList(ConfigBase):
         ConfigBase.__init__(self, *args, **kwds)
         if self._domain is None:
             self._domain = ConfigValue()
-        elif isinstance(self._domain, ConfigBase):
-            pass
-        else:
+        elif not isinstance(self._domain, ConfigBase):
             self._domain = ConfigValue(None, domain=self._domain)
         self.reset()
 
@@ -1183,27 +1175,20 @@ class ConfigList(ConfigBase):
     def __getitem__(self, key):
         val = self._data[key]
         self._userAccessed = True
-        if isinstance(val, ConfigValue):
-            return val.value()
-        else:
-            return val
+        return val.value() if isinstance(val, ConfigValue) else val
 
     def get(self, key, default=ConfigBase.NoArgument):
         # Note: get() is borrowed from ConfigDict for cases where we
         # want the raw stored object (and to aviod the implicit
         # conversion of ConfigValue members to their stored data).
         try:
-            val = self._data[key]
             self._userAccessed = True
-            return val
+            return self._data[key]
         except:
             pass
         if default is ConfigBase.NoArgument:
             return None
-        if self._domain is not None:
-            return self._domain(default)
-        else:
-            return ConfigValue(default)
+        return ConfigValue(default) if self._domain is None else self._domain(default)
 
     def __setitem__(self, key, val):
         # Note: this will fail if the element doesn't exist in _data.
@@ -1261,7 +1246,7 @@ class ConfigList(ConfigBase):
         self._data.append(val)
         #print self._data[-1], type(self._data[-1])
         self._data[-1]._parent = self
-        self._data[-1]._name = '[%s]' % (len(self._data) - 1,)
+        self._data[-1]._name = f'[{len(self._data) - 1}]'
         self._data[-1]._userSet = True
         self._userSet = True
 
@@ -1285,8 +1270,7 @@ class ConfigList(ConfigBase):
                                                      visibility, docMode)
             # Pop off the (empty) block entry
             six.next(subDomain)
-            for v in subDomain:
-                yield v
+            yield from subDomain
             return
         if prefix:
             if not self._data:
@@ -1296,8 +1280,7 @@ class ConfigList(ConfigBase):
                 if level is not None:
                     level += 1
         for value in self._data:
-            for v in value._data_collector(level, '- ', visibility, docMode):
-                yield v
+            yield from value._data_collector(level, '- ', visibility, docMode)
 
 
 class ConfigDict(ConfigBase):
@@ -1430,7 +1413,7 @@ class ConfigDict(ConfigBase):
         if name not in self._data:
             _name = name.replace('_', ' ')
             if _name not in self._data:
-                raise AttributeError("Unknown attribute '%s'" % name)
+                raise AttributeError(f"Unknown attribute '{name}'")
             name = _name
         return ConfigDict.__getitem__(self, name)
 
@@ -1468,21 +1451,20 @@ class ConfigDict(ConfigBase):
         name = str(name)
         if config._parent is not None:
             raise ValueError(
-                "config '%s' is already assigned to Config Block '%s'; "
-                "cannot reassign to '%s'" %
-                (name, config._parent.name(True), self.name(True)))
+                f"config '{name}' is already assigned to Config Block '{config._parent.name(True)}'; cannot reassign to '{self.name(True)}'"
+            )
         if name in self._data:
             raise ValueError(
-                "duplicate config '%s' defined for Config Block '%s'" %
-                (name, self.name(True)))
+                f"duplicate config '{name}' defined for Config Block '{self.name(True)}'"
+            )
         if '.' in name or '[' in name or ']' in name:
             raise ValueError(
-                "Illegal character in config '%s' for config Block '%s': "
-                "'.[]' are not allowed." % (name, self.name(True)))
+                f"Illegal character in config '{name}' for config Block '{self.name(True)}': '.[]' are not allowed."
+            )
         self._data[name] = config
         self._decl_order.append(name)
-        config._parent = self
         config._name = name
+        config._parent = self
         return config
 
     def declare(self, name, config):
@@ -1523,20 +1505,23 @@ class ConfigDict(ConfigBase):
     def value(self, accessValue=True):
         if accessValue:
             self._userAccessed = True
-        return dict((name, config.value(accessValue))
-                    for name, config in six.iteritems(self._data))
+        return {
+            name: config.value(accessValue)
+            for name, config in six.iteritems(self._data)
+        }
 
     def set_value(self, value, skip_implicit=False):
         if value is None:
             return self
         if (type(value) is not dict) and \
-           (not isinstance(value, ConfigDict)):
-            raise ValueError("Expected dict value for %s.set_value, found %s" %
-                             (self.name(True), type(value).__name__))
+               (not isinstance(value, ConfigDict)):
+            raise ValueError(
+                f"Expected dict value for {self.name(True)}.set_value, found {type(value).__name__}"
+            )
         if not value:
             return self
-        _implicit = []
         _decl_map = {}
+        _implicit = []
         for key in value:
             _key = str(key)
             if _key in self._data:
@@ -1547,17 +1532,15 @@ class ConfigDict(ConfigBase):
             else:
                 _key = _key.replace('_', ' ')
                 if _key in self._data:
-                    _decl_map[str(_key)] = key
+                    _decl_map[_key] = key
+                elif skip_implicit:
+                    pass
+                elif self._implicit_declaration:
+                    _implicit.append(key)
                 else:
-                    if skip_implicit:
-                        pass
-                    elif self._implicit_declaration:
-                        _implicit.append(key)
-                    else:
-                        raise ValueError(
-                            "key '%s' not defined for Config Block '%s' and "
-                            "implicit (undefined) keys are not allowed" %
-                            (key, self.name(True)))
+                    raise ValueError(
+                        f"key '{key}' not defined for Config Block '{self.name(True)}' and implicit (undefined) keys are not allowed"
+                    )
 
         # If the set_value fails part-way through the new values, we
         # want to restore a deterministic state.  That is, either
@@ -1604,9 +1587,9 @@ class ConfigDict(ConfigBase):
             if level is not None:
                 level += 1
         for key in self._decl_order:
-            for v in self._data[key]._data_collector(level, key + ': ',
-                                                     visibility, docMode):
-                yield v
+            yield from self._data[key]._data_collector(
+                level, f'{key}: ', visibility, docMode
+            )
 
 # Backwards compatibility: ConfigDick was originally named ConfigBlock.
 ConfigBlock = ConfigDict
@@ -1650,10 +1633,7 @@ class In(object):
         self._domain = domain
 
     def __call__(self, value):
-        if self._domain is not None:
-            v = self._domain(value)
-        else:
-            v = value
+        v = self._domain(value) if self._domain is not None else value
         if v in self._allowable:
             return v
-        raise ValueError("value %s not in domain %s" % (value, self._allowable))
+        raise ValueError(f"value {value} not in domain {self._allowable}")

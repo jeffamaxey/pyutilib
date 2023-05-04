@@ -26,12 +26,12 @@ def lbin(args):
             find_only = True
         args.pop(0)
 
-        if args and args[0] in ['-v', '-f']:
-            if args[0] == '-v':
-                verbose = True
-            elif args[0] == '-f':
-                find_only = True
-            args.pop(0)
+    if args and args[0] in ['-v', '-f']:
+        if args[0] == '-v':
+            verbose = True
+        elif args[0] == '-f':
+            find_only = True
+        args.pop(0)
 
     if len(args) == 0:
         print(usage)
@@ -66,14 +66,14 @@ def lbin(args):
             else:
                 return subprocess.call(['which', args[0]])
         if verbose:
-            print("Path search found the following instances of %s:" % args[0])
+            print(f"Path search found the following instances of {args[0]}:")
             x = subprocess.call(['which', args[0]])
             print("")
         os.execvp(args[0], args)
-        #return subprocess.call(args)
+            #return subprocess.call(args)
     except OSError:
         err = sys.exc_info()[1]
-        print("ERROR executing command '%s': %s" % (' '.join(args), str(err)))
+        print(f"ERROR executing command '{' '.join(args)}': {str(err)}")
         return err.errno
 
 

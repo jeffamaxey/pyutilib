@@ -32,7 +32,7 @@ class IODebug(unittest.TestCase):
 
     def test_redirect1(self):
         # Verify that IO redirection works
-        pyutilib.misc.setup_redirect(currdir + "redirect_io.out")
+        pyutilib.misc.setup_redirect(f"{currdir}redirect_io.out")
         print("HERE")
         print([1, 2, 3])
         #
@@ -42,35 +42,43 @@ class IODebug(unittest.TestCase):
         pyutilib.misc.reset_redirect()
         self.assertFalse(
             pyutilib.misc.comparison.compare_file(
-                currdir + "redirect_io.out", currdir + "redirect_io1.txt")[0])
+                f"{currdir}redirect_io.out", f"{currdir}redirect_io1.txt"
+            )[0]
+        )
         self.assertFalse(
             pyutilib.misc.comparison.compare_file(
-                currdir + "redirect_io.out",
-                currdir + "redirect_io2.txt",
-                filter=filter1)[0])
+                f"{currdir}redirect_io.out",
+                f"{currdir}redirect_io2.txt",
+                filter=filter1,
+            )[0]
+        )
         self.assertFalse(
             pyutilib.misc.comparison.compare_file(
-                currdir + "redirect_io.out",
-                currdir + "redirect_io2.txt",
-                filter=filter2)[0])
-        os.remove(currdir + "redirect_io.out")
+                f"{currdir}redirect_io.out",
+                f"{currdir}redirect_io2.txt",
+                filter=filter2,
+            )[0]
+        )
+        os.remove(f"{currdir}redirect_io.out")
 
     def test_redirect2(self):
         # Verify that IO redirection will create an empty file is no output is generated
-        pyutilib.misc.setup_redirect(currdir + "redirect_io.out")
+        pyutilib.misc.setup_redirect(f"{currdir}redirect_io.out")
         pyutilib.misc.reset_redirect()
-        if not os.path.exists(currdir + "redirect_io.out"):
+        if not os.path.exists(f"{currdir}redirect_io.out"):
             self.fail("Redirection did not create an empty file.")
         self.assertFalse(
             pyutilib.misc.comparison.compare_file(
-                currdir + "redirect_io.out", currdir + "redirect_io2.txt")[0])
-        os.remove(currdir + "redirect_io.out")
+                f"{currdir}redirect_io.out", f"{currdir}redirect_io2.txt"
+            )[0]
+        )
+        os.remove(f"{currdir}redirect_io.out")
 
     def test_redirect3(self):
         # Verify that IO redirection can be nested
-        pyutilib.misc.setup_redirect(currdir + "redirect_io1.out")
+        pyutilib.misc.setup_redirect(f"{currdir}redirect_io1.out")
         print("HERE")
-        pyutilib.misc.setup_redirect(currdir + "redirect_io3.out")
+        pyutilib.misc.setup_redirect(f"{currdir}redirect_io3.out")
         print("THERE")
         print([4, 5, 6])
         pyutilib.misc.reset_redirect()
@@ -82,17 +90,23 @@ class IODebug(unittest.TestCase):
         pyutilib.misc.reset_redirect()
         self.assertFalse(
             pyutilib.misc.comparison.compare_file(
-                currdir + "redirect_io1.out", currdir + "redirect_io1.txt")[0])
-        os.remove(currdir + "redirect_io1.out")
+                f"{currdir}redirect_io1.out", f"{currdir}redirect_io1.txt"
+            )[0]
+        )
+        os.remove(f"{currdir}redirect_io1.out")
         self.assertFalse(
             pyutilib.misc.comparison.compare_file(
-                currdir + "redirect_io3.out", currdir + "redirect_io3.txt")[0])
+                f"{currdir}redirect_io3.out", f"{currdir}redirect_io3.txt"
+            )[0]
+        )
         self.assertFalse(
             pyutilib.misc.comparison.compare_file(
-                currdir + "redirect_io3.out",
-                currdir + "redirect_io3.txt",
-                filter=filter3)[0])
-        os.remove(currdir + "redirect_io3.out")
+                f"{currdir}redirect_io3.out",
+                f"{currdir}redirect_io3.txt",
+                filter=filter3,
+            )[0]
+        )
+        os.remove(f"{currdir}redirect_io3.out")
 
     def test_redirect4(self):
         # Verify that IO redirection works with file-like objects
@@ -109,7 +123,7 @@ class IODebug(unittest.TestCase):
 
     def test_format_io(self):
         # Test that formated IO looks correct.
-        pyutilib.misc.setup_redirect(currdir + "format_io.out")
+        pyutilib.misc.setup_redirect(f"{currdir}format_io.out")
         print(pyutilib.misc.format_io(0.0))
         print(pyutilib.misc.format_io(0))
         print(pyutilib.misc.format_io(1e-1))
@@ -131,9 +145,11 @@ class IODebug(unittest.TestCase):
         print(pyutilib.misc.format_io('string'))
         pyutilib.misc.reset_redirect()
         self.assertFalse(
-            pyutilib.misc.comparison.compare_file(currdir + "format_io.out",
-                                                  currdir + "format_io.txt")[0])
-        os.remove(currdir + "format_io.out")
+            pyutilib.misc.comparison.compare_file(
+                f"{currdir}format_io.out", f"{currdir}format_io.txt"
+            )[0]
+        )
+        os.remove(f"{currdir}format_io.out")
 
     def test_format_float_err1(self):
         # Test that errors are generated for non floats

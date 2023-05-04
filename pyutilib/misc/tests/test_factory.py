@@ -4,7 +4,7 @@
 #
 
 from os.path import abspath, dirname
-pkgdir = dirname(abspath(__file__)) + "/../.."
+pkgdir = f"{dirname(abspath(__file__))}/../.."
 
 import pyutilib.th as unittest
 import pyutilib.misc
@@ -22,11 +22,11 @@ class FactoryDebug(unittest.TestCase):
         def __init__(self, *args, **kargs):
             pass
 
-    def Afunc(*args, **kargs):
-        return FactoryDebug.A(*args, **kargs)
+    def Afunc(self, **kargs):
+        return FactoryDebug.A(*self, **kargs)
 
-    def Bfunc(*args, **kargs):
-        return FactoryDebug.B(*args, **kargs)
+    def Bfunc(self, **kargs):
+        return FactoryDebug.B(*self, **kargs)
 
     def setUp(self):
         self.factory = pyutilib.misc.Factory()

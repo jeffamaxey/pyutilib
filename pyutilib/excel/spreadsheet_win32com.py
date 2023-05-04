@@ -101,7 +101,7 @@ class ExcelSpreadsheet_win32com(ExcelSpreadsheet_base):
         """ Activate a specific sheet """
         if name is None:
             return
-        if not name in self._ws:
+        if name not in self._ws:
             self.worksheets.add(name)
             self._ws[name] = self.wb.Worksheets.Item(name)
             self._ws[name].Activate()
@@ -122,7 +122,7 @@ class ExcelSpreadsheet_win32com(ExcelSpreadsheet_base):
     def calc_iterations(self, val=None):
         if val is None:
             return self.xl.Iteration
-        if not type(val) is bool:
+        if type(val) is not bool:
             raise ValueError(
                 "ExcelSpreadsheet calc_iterations can only be set to a boolean")
         self.xl.Iteration = val
@@ -130,7 +130,7 @@ class ExcelSpreadsheet_win32com(ExcelSpreadsheet_base):
     def max_iterations(self, val=None):
         if val is None:
             return self.xl.MaxIterations
-        if (not type(val) in [int, float, long]) or val < 0:
+        if type(val) not in [int, float, long] or val < 0:
             raise ValueError(
                 "ExcelSpreadsheet max_iterations can only be set to nonnegative integer")
         self.xl.MaxIterations = val
@@ -159,9 +159,9 @@ class ExcelSpreadsheet_win32com(ExcelSpreadsheet_base):
         if type(val) in (int, float):
             val = ((val,),)
         if len(val) != self.get_range_nrows(rangename):
-            raise IOError("Setting data with " + str(len(val)) +
-                          " rows but range has " + str(
-                              self.get_range_nrows(rangename)))
+            raise IOError(
+                f"Setting data with {len(val)} rows but range has {str(self.get_range_nrows(rangename))}"
+            )
         if type(val) is tuple:
             data = val
         elif type(val) not in (float, int, bool):
@@ -188,7 +188,7 @@ class ExcelSpreadsheet_win32com(ExcelSpreadsheet_base):
         starting from the first non-blank cell until the first blank cell.
         """
         self.activate(wsid)
-        name = colname + "1"
+        name = f"{colname}1"
         if self.get_range(name) is None:
             start = self.ws().Range(name).End(self.xlDown)
         else:
@@ -197,9 +197,9 @@ class ExcelSpreadsheet_win32com(ExcelSpreadsheet_base):
             range = self.ws().Range(start, start.End(self.xlDown))
         else:
             range = self.ws().Range(
-                start, self.ws().Range(colname + "65536").End(self.xlUp))
-        tmp = self._get_range_data(range, raw)
-        return tmp
+                start, self.ws().Range(f"{colname}65536").End(self.xlUp)
+            )
+        return self._get_range_data(range, raw)
 
     def get_range(self, rangename, wsid=None, raw=False):
         """
@@ -214,32 +214,24 @@ class ExcelSpreadsheet_win32com(ExcelSpreadsheet_base):
             return range.Value
         nrows = range.Rows.Count
         ncols = range.Columns.Count
-        if range.Columns.Count == 1:
-            if nrows == 1:
-                #
-                # The range is a singleton, so return a float
-                #
-                return range.Value
-            else:
-                #
-                # The range is a column of data, so return a tuple of floats
-                #
-                ans = []
-                for val in range.Value:
-                    ans.append(val[0])
-                return tuple(ans)
+        if (
+            range.Columns.Count == 1
+            and nrows == 1
+            or range.Columns.Count != 1
+            and nrows != 1
+        ):
+            #
+            # The range is a singleton, so return a float
+            #
+            return range.Value
+        elif range.Columns.Count == 1:
+            ans = [val[0] for val in range.Value]
+            return tuple(ans)
         else:
-            if nrows == 1:
-                #
-                # The range is a row of data, so return a tuple of floats
-                #
-                return range.Value[0]
-            else:
-                #
-                # The range is a two-dimensional array, so return the values
-                # as a tuple of tuples.
-                #
-                return range.Value
+            #
+            # The range is a row of data, so return a tuple of floats
+            #
+            return range.Value[0]
 
     def get_range_nrows(self, rangename, wsid=None):
         """
@@ -275,7 +267,7 @@ class ExcelSpreadsheet_win32com(ExcelSpreadsheet_base):
             else:
                 return self.ws().Range(rangeid)
         except com_error:
-            raise IOError("Unknown range name `" + str(rangeid) + "'")
+            raise IOError(f"Unknown range name `{str(rangeid)}'")
 
     def _excel_dispatch(self):
         """

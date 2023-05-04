@@ -29,7 +29,7 @@ except:
 
 
 def _collect_parser_groups(t):
-    for key in t._parser_group:
+    for _ in t._parser_group:
         #
         # NOTE: we are changing the properties of the group
         # instances here.  This is OK _only_ because we are
@@ -83,7 +83,7 @@ class Workflow(Task):
                 #
                 # Constant input values are not added to the start task
                 #
-                if not name in self._start_task.outputs:
+                if name not in self._start_task.outputs:
                     self._start_task.outputs.declare(name)
                     self.inputs.declare(name, optional=True)
                 # TODO: this is a bit of a hack...
@@ -106,8 +106,8 @@ class Workflow(Task):
             else:
                 if name in self._final_task.inputs:
                     raise ValueError(
-                        "Cannot declare a workplan with multiple output values that share the same name: %s"
-                        % name)
+                        f"Cannot declare a workplan with multiple output values that share the same name: {name}"
+                    )
                 self.outputs.declare(name)
                 self._final_task.inputs.declare(name)
                 setattr(self._final_task.inputs, name, task.outputs[name])
@@ -165,13 +165,13 @@ class Workflow(Task):
             print(self.name, '---------------')
             print(self.name, '---------------')
         #
-        queued = set([self._start_task.id])
+        queued = {self._start_task.id}
         queue = deque([self._start_task])
         waiting = OrderedDict()
         while len(queue) + len(waiting) > 0:
             for id in list(iterkeys(waiting)):
                 t = waiting[id]
-                if not t.id in queued and t.ready():
+                if t.id not in queued and t.ready():
                     #
                     if self.debug:  #pragma:nocover
                         print(self.name, "WAITING: ", t.id,
@@ -192,11 +192,10 @@ class Workflow(Task):
             task = queue.popleft()
             #
             if self.debug:  #pragma:nocover
-                print(self.name, "TASK   ", str(task))
+                print(self.name, "TASK   ", task)
                 print(self.name, "QUEUE  ", queued)
                 print(self.name, "WAITING", waiting.keys())
-                print(self.name, "Executing Task " + task.name,
-                      task.next_task_ids())
+                print(self.name, f"Executing Task {task.name}", task.next_task_ids())
             #
             queued.remove(task.id)
             task()
@@ -216,7 +215,7 @@ class Workflow(Task):
                     if t.id in waiting:
                         del waiting[t.id]
                 else:
-                    if not t.id in waiting:
+                    if t.id not in waiting:
                         waiting[t.id] = t
                     #
                     if self.debug:  #pragma:nocover
@@ -234,8 +233,12 @@ class Workflow(Task):
             print(self.name, '---------------')
 
     def __str__(self):
-        return "\n".join(["Workflow %s:" % self.name] + self._dfs_(
-            [self._start_task.id], lambda t: t._name()))
+        return "\n".join(
+            (
+                [f"Workflow {self.name}:"]
+                + self._dfs_([self._start_task.id], lambda t: t._name())
+            )
+        )
 
     def __repr__(self):
         return "Workflow %s:\n" % self.name + Task.__repr__(

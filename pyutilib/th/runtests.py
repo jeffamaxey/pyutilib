@@ -50,18 +50,12 @@ class UnwantedPackagePlugin(nose.plugins.Plugin):
         pass
 
     def wantDirectory(self, dirname):
-        want = None
-        if os.path.basename(dirname) in self.unwanted:
-            want = False
-        return want
+        return False if os.path.basename(dirname) in self.unwanted else None
 
 
 def generate_options(package, packages, subpackages, filter, options, testdir,
                      xunitdir, dirname):
-    if not type(packages) is list:
-        tmp = [packages]
-    else:
-        tmp = packages
+    tmp = [packages] if type(packages) is not list else packages
     newargs = []
     if options.xunit:
         newargs = ['--with-xunit', '--xunit-file', xunitdir + os.sep + 'TEST-' +
@@ -69,18 +63,22 @@ def generate_options(package, packages, subpackages, filter, options, testdir,
         #if coverage_installed:
     #newargs = newargs + ['--source-folder', '.']
     if coverage_installed:
-        newargs = newargs + ['--with-coverage', '--cover-erase',
-                             '--cover-inclusive', '--cover-package', package]
+        newargs += [
+            '--with-coverage',
+            '--cover-erase',
+            '--cover-inclusive',
+            '--cover-package',
+            package,
+        ]
         if options.filtering or options.filtering_all:
-            for item in filter:
-                newargs.append('--cover-filter=' + item)
+            newargs.extend(f'--cover-filter={item}' for item in filter)
             if len(tmp) > 0:
                 for item in subpackages:
-                    if not item in tmp:
-                        newargs.append('--cover-filter=' + package + '.' + item)
+                    if item not in tmp:
+                        newargs.append(f'--cover-filter={package}.{item}')
     if options.verbose:
-        newargs = newargs + ['--verbosity=3']
-    newargs = newargs + ['--where', dirname]
+        newargs += ['--verbosity=3']
+    newargs += ['--where', dirname]
     return newargs
 
 
@@ -133,8 +131,8 @@ def main(argv, package, subpackages, filter, testdir, dirname="test"):
     #
     unwanted = copy.copy(subpackages)
     for arg in args[1:]:
-        if not arg in subpackages:
-            print("ERROR: no subpackage '" + arg)
+        if arg not in subpackages:
+            print(f"ERROR: no subpackage '{arg}")
             sys.exit(1)
         unwanted.remove(arg)
     if unwanted == subpackages:
@@ -184,13 +182,10 @@ def main(argv, package, subpackages, filter, testdir, dirname="test"):
         sys.argv = newargs
         nose.run(argv=newargs, addplugins=plugins)
     else:
-        if len(args[1:]) == 0:
-            arglist = subpackages
-        else:
-            arglist = args[1:]
+        arglist = subpackages if len(args[1:]) == 0 else args[1:]
         for arg in arglist:
             newargs = ['runtests'] + generate_options(arg, options) + [arg]
-            print("Package Coverage Tests: " + arg)
+            print(f"Package Coverage Tests: {arg}")
             tmp = sys.stdout
             os.chdir(testdir)
             if options.verbose:
@@ -211,21 +206,12 @@ def main(argv, package, subpackages, filter, testdir, dirname="test"):
     if os.path.exists(xunitdir):
         p = re.compile('^.*TEST-(.+)\.xml')
         for file in glob.glob(xunitdir + os.sep + "TEST-*.xml"):
-            oldname = p.match(file).group(1)
-            if oldname == "test":
-                suffix = ""
-            else:
-                suffix = "." + oldname
-
-            FILE = open(file, "r")
-            text0 = "".join(FILE.readlines())
-            FILE.close()
+            oldname = p.match(file)[1]
+            suffix = "" if oldname == "test" else f".{oldname}"
+            with open(file, "r") as FILE:
+                text0 = "".join(FILE.readlines())
             ptmp = re.compile("testsuite name=\"nosetests\"")
             text1 = ptmp.sub("testsuite name=\"" + package + "\"", text0)
-            #ptmp = re.compile("classname=\""+oldname)
-            #text2 = ptmp.sub("classname=\""+package+suffix, text1)
-            #FILE = open(xunitdir+os.sep+"TEST-"+package+suffix+".xml","w")
-            FILE = open(file, "w")
-            FILE.write(text1)
-            FILE.close()
+            with open(file, "w") as FILE:
+                FILE.write(text1)
             #os.remove(file)

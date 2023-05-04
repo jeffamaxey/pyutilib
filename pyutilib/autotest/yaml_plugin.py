@@ -28,16 +28,11 @@ class YamlTestParser(SingletonPlugin):
 
     def load_test_config(self, filename):
         if using_yaml:
-            INPUT = open(filename, 'r')
-            repn = yaml.load(INPUT, yaml.SafeLoader)
-            INPUT.close()
+            with open(filename, 'r') as INPUT:
+                repn = yaml.load(INPUT, yaml.SafeLoader)
             return repn
-        #
-        # If PyYaml is not available, then we use a simple yaml parser
-        #
-        INPUT = open(filename, 'r')
-        repn = pyutilib.misc.simple_yaml_parser(INPUT)
-        INPUT.close()
+        with open(filename, 'r') as INPUT:
+            repn = pyutilib.misc.simple_yaml_parser(INPUT)
         return repn
 
     def print_test_config(self, repn):

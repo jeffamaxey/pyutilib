@@ -52,7 +52,7 @@ class Test(unittest.TestCase):
         """Test contains method"""
         config = Configuration()
         self.assertFalse("globals" in config)
-        config.load(currdir + "config1.ini")
+        config.load(f"{currdir}config1.ini")
         self.assertTrue("globals" in config)
 
     def test_getitem(self):
@@ -63,17 +63,15 @@ class Test(unittest.TestCase):
             self.fail("expected error")
         except ConfigurationError:
             pass
-        config.load(currdir + "config1.ini")
-        keys = list(config["globals"].keys())
-        keys.sort()
+        config.load(f"{currdir}config1.ini")
+        keys = sorted(config["globals"].keys())
         self.assertTrue(keys == ["a", "b", "c"])
 
     def test_sections(self):
         """Test getitem method"""
         config = Configuration()
-        config.load(currdir + "config1.ini")
-        keys = list(config.sections())
-        keys.sort()
+        config.load(f"{currdir}config1.ini")
+        keys = sorted(config.sections())
 
     def test_load1(self):
         """Test load method"""
@@ -97,7 +95,7 @@ class Test(unittest.TestCase):
         """Test load method"""
         config = Configuration()
         try:
-            config.load(currdir + "config2.ini")
+            config.load(f"{currdir}config2.ini")
             config.pprint()
             self.fail("expected error")
         except ConfigurationError:
@@ -107,7 +105,7 @@ class Test(unittest.TestCase):
         """Test load method"""
         config = Configuration()
         try:
-            config.load(currdir + "config3.ini")
+            config.load(f"{currdir}config3.ini")
             self.fail("expected error")
         except ConfigurationError:
             pass
@@ -126,44 +124,31 @@ class Test(unittest.TestCase):
 
         config = Configuration()
         tmp2 = TMP2()
-        config.load(currdir + "config4.ini")
-        #config.pprint()
-        if False and sys.platform == "win32":
-            #
-            # A hack, to ensure cross-platform portability of this test
-            #
-            e = ExtensionPoint(IFileOption)
-            for ep in e.extensions():
-                ep.set_value("/dev/null", raw=True)
+        config.load(f"{currdir}config4.ini")
         #PluginGlobals.pprint()
-        config.save(currdir + "config4.out")
+        config.save(f"{currdir}config4.out")
         #print config
         self.assertFileEqualsBaseline(
-            currdir + "config4.out", currdir + "config4.txt", filter=filter)
-        pyutilib.misc.setup_redirect(currdir + "log2.out")
+            f"{currdir}config4.out", f"{currdir}config4.txt", filter=filter
+        )
+        pyutilib.misc.setup_redirect(f"{currdir}log2.out")
         config.pprint()
         pyutilib.misc.reset_redirect()
         self.assertFileEqualsBaseline(
-            currdir + "log2.out", currdir + "log2.txt", filter=filter)
+            f"{currdir}log2.out", f"{currdir}log2.txt", filter=filter
+        )
         PluginGlobals.remove_env(
             "testing.config_loading", cleanup=True, singleton=False)
 
     def test_save1(self):
         """Test save method"""
         config = Configuration()
-        config.load(currdir + "config1.ini")
-        #
-        # A hack, to ensure cross-platform portability of this test
-        #
-        if False and sys.platform == "win32":
-            e = ExtensionPoint(IFileOption)
-            for ep in e.extensions():
-                if ep.enabled():
-                    ep.set_value("/dev/null", raw=True)
-        config.save(currdir + "config1.out")
+        config.load(f"{currdir}config1.ini")
+        config.save(f"{currdir}config1.out")
         #PluginGlobals.pprint()
         self.assertFileEqualsBaseline(
-            currdir + "config1.out", currdir + "config1.txt", filter=filter)
+            f"{currdir}config1.out", f"{currdir}config1.txt", filter=filter
+        )
 
     def test_save2(self):
         """Test save method"""

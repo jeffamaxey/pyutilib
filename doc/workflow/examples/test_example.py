@@ -16,7 +16,7 @@ class Test(unittest.TestCase):
     pass
 
 # Find all example*.py files, and use them to define baseline tests
-for file in glob.glob(datadir+'example*.py'):
+for file in glob.glob(f'{datadir}example*.py'):
     bname = basename(file)
     name=bname.split('.')[0]
     #
@@ -24,16 +24,21 @@ for file in glob.glob(datadir+'example*.py'):
     # work when running with nosetests
     #
     if not os.path.exists(datadir+name+'.txt'):
-        sys.stderr.write("WARNING:  no baseline available for file "+file)
+        sys.stderr.write(f"WARNING:  no baseline available for file {file}")
     else:
         Test.add_import_test(name=name, cwd=datadir, baseline=datadir+name+'.txt', filter=filter)
 
 if not sys.platform.startswith('win'):
     # Find all *.sh files, and use them to define baseline tests
-    for file in glob.glob(datadir+'*.sh'):
+    for file in glob.glob(f'{datadir}*.sh'):
         bname = basename(file)
         name=bname.split('.')[0]
-        Test.add_baseline_test(cmd='cd %s; /usr/bin/env bash %s' % (datadir, file),  baseline=datadir+name+'.txt', name=name, filter=filter)
+        Test.add_baseline_test(
+            cmd=f'cd {datadir}; /usr/bin/env bash {file}',
+            baseline=datadir + name + '.txt',
+            name=name,
+            filter=filter,
+        )
 
 # Execute the tests
 if __name__ == '__main__':

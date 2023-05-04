@@ -4,7 +4,7 @@
 #
 
 from os.path import abspath, dirname
-pkgdir = dirname(abspath(__file__)) + "/../.."
+pkgdir = f"{dirname(abspath(__file__))}/../.."
 
 import pyutilib.th as unittest
 import pyutilib.misc
@@ -28,20 +28,13 @@ class CrossDebug(unittest.TestCase):
         self.assertEqual(ans, self.tmp)
 
     def test_cross2(self):
-        # Apply the cross_iter() method
-        ans = []
-        for item in pyutilib.misc.cross_iter((10, 11), (22, 23), (31, 32, 33)):
-            ans.append(item)
-        ans.sort()
+        ans = sorted(pyutilib.misc.cross_iter((10, 11), (22, 23), (31, 32, 33)))
         self.assertEqual(ans, self.tmp)
 
     def test_cross3(self):
-        # Apply the flattened_cross_iter() method
-        ans = []
-        for item in pyutilib.misc.flattened_cross_iter((10, 11), ((22, 31),
-                                                                  (23, 32))):
-            ans.append(item)
-        ans.sort()
+        ans = sorted(
+            pyutilib.misc.flattened_cross_iter((10, 11), ((22, 31), (23, 32)))
+        )
         self.assertEqual(ans, self.ttmp)
 
 

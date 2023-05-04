@@ -21,10 +21,7 @@ class WindowsError_def(Exception):
         Exception.__init__(self, *args, **kargs)  #pragma:nocover
 
 
-if (sys.platform[0:3] != "win"):
-    WindowsError = WindowsError_def
-else:
-    WindowsError = WindowsError
+WindowsError = WindowsError_def if sys.platform[:3] != "win" else WindowsError
 __all__.append("WindowsError")
 
 

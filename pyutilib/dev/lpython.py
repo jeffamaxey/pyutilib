@@ -18,7 +18,7 @@ def lpython(args):
     process = None
 
     def signal_handler(signum, frame):
-        if not process is None:
+        if process is not None:
             if sys.platform == "win32":
                 # On Windows this calls the Win32 API function TerminateProcess()
                 process.terminate()

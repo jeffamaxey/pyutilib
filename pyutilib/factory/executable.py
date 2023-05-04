@@ -28,6 +28,8 @@ def register_executable(name, validate=None):
     if name in ExecutableFactory:
         return
 
+
+
     @ExecutableFactory.register(name)
     class TMP(object):
         def __init__(self):
@@ -39,9 +41,7 @@ def register_executable(name, validate=None):
                 validate=validate)
 
         def get_path(self):
-            if self.executable:
-                return self.executable
-            return self.exec_default
+            return self.executable if self.executable else self.exec_default
 
 
 def registered_executable(name=None):
@@ -62,8 +62,6 @@ def registered_executable(name=None):
         return sorted(list(ExecutableFactory))
     if name in ExecutableFactory:
         tmp = ExecutableFactory(name)
-        if tmp.get_path() is None:
-            return None
-        return tmp
+        return None if tmp.get_path() is None else tmp
     return None
 

@@ -126,8 +126,10 @@ class EggLoader(ManagedPlugin):
                 e = sys.exc_info()[1]
                 _log_error(entry, e)
             else:
-                if not disable_re.match(os.path.dirname(
-                        entry.module_name)) is None:
+                if (
+                    disable_re.match(os.path.dirname(entry.module_name))
+                    is not None
+                ):
                     #_enable_plugin(env, entry.module_name)
                     pass
 

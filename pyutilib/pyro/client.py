@@ -66,7 +66,7 @@ class Client(object):
 
                 for (name, uri) in dispatchers:
                     self.URI = uri
-                    print("Dispatcher Object URI: " + str(self.URI))
+                    print(f"Dispatcher Object URI: {str(self.URI)}")
                     break
 
                 if self.URI is not None:
@@ -105,11 +105,8 @@ class Client(object):
             assert port is None
             assert host is None
             self.dispatcher = dispatcher
-            if using_pyro4:
-                self.URI = self.dispatcher._pyroUri
-            else:
-                self.URI = self.dispatcher.URI
-            print('Client assigned dispatcher with URI=%s' % (self.URI))
+            self.URI = self.dispatcher._pyroUri if using_pyro4 else self.dispatcher.URI
+            print(f'Client assigned dispatcher with URI={self.URI}')
 
     def close(self):
         if self.dispatcher is not None:

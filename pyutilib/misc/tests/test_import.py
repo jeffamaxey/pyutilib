@@ -23,49 +23,60 @@ except:
 class TestRunFile(unittest.TestCase):
 
     def test_run_file1(self):
-        pyutilib.misc.run_file(
-            currdir + "import1.py", logfile=currdir + "import1.log")
-        if not os.path.exists(currdir + "import1.log"):
+        pyutilib.misc.run_file(f"{currdir}import1.py", logfile=f"{currdir}import1.log")
+        if not os.path.exists(f"{currdir}import1.log"):
             self.fail("test_run_file - failed to create logfile")
         self.assertFalse(
-            pyutilib.misc.comparison.compare_file(currdir + "import1.log",
-                                                  currdir + "import1.txt")[0])
-        os.remove(currdir + "import1.log")
+            pyutilib.misc.comparison.compare_file(
+                f"{currdir}import1.log", f"{currdir}import1.txt"
+            )[0]
+        )
+        os.remove(f"{currdir}import1.log")
 
     def test_run_file2(self):
         pyutilib.misc.run_file(
-            "import1.py", logfile=currdir + "import1.log", execdir=currdir)
-        if not os.path.exists(currdir + "import1.log"):
+            "import1.py", logfile=f"{currdir}import1.log", execdir=currdir
+        )
+        if not os.path.exists(f"{currdir}import1.log"):
             self.fail("test_run_file - failed to create logfile")
         self.assertFalse(
-            pyutilib.misc.comparison.compare_file(currdir + "import1.log",
-                                                  currdir + "import1.txt")[0])
-        os.remove(currdir + "import1.log")
+            pyutilib.misc.comparison.compare_file(
+                f"{currdir}import1.log", f"{currdir}import1.txt"
+            )[0]
+        )
+        os.remove(f"{currdir}import1.log")
 
     def test_run_file3(self):
         try:
             pyutilib.misc.run_file(
-                "import2.py", logfile=currdir + "import2.log", execdir=currdir)
+                "import2.py", logfile=f"{currdir}import2.log", execdir=currdir
+            )
             self.fail("test_run_file - expected type error in import2.py")
         except TypeError:
             pass
         self.assertFalse(
-            pyutilib.misc.comparison.compare_file(currdir + "import2.log",
-                                                  currdir + "import2.txt")[0])
-        os.remove(currdir + "import2.log")
+            pyutilib.misc.comparison.compare_file(
+                f"{currdir}import2.log", f"{currdir}import2.txt"
+            )[0]
+        )
+        os.remove(f"{currdir}import2.log")
 
     def test_run_file_exception(self):
         orig_path = list(sys.path)
         with self.assertRaisesRegexp(RuntimeError, "raised from __main__"):
             pyutilib.misc.run_file(
                 "import_main_exception.py",
-                logfile=currdir + "import_main_exception.log", execdir=currdir)
+                logfile=f"{currdir}import_main_exception.log",
+                execdir=currdir,
+            )
 
         self.assertFalse(
             pyutilib.misc.comparison.compare_file(
-                currdir + "import_main_exception.log",
-                currdir + "import_main_exception.txt")[0])
-        os.remove(currdir + "import_main_exception.log")
+                f"{currdir}import_main_exception.log",
+                f"{currdir}import_main_exception.txt",
+            )[0]
+        )
+        os.remove(f"{currdir}import_main_exception.log")
         self.assertIsNot(orig_path, sys.path)
         self.assertEqual(orig_path, sys.path)
 
@@ -81,27 +92,27 @@ class TestImportFile(unittest.TestCase):
             del sys.modules[mod]
 
     def test_import_file_context1(self):
-        pyutilib.misc.import_file(currdir + "import1.py")
+        pyutilib.misc.import_file(f"{currdir}import1.py")
         if "import1" in globals():
             self.fail(
                 "test_import_file - globals() should not be affected by import")
 
     def test_import_file_context2(self):
-        import1 = pyutilib.misc.import_file(currdir + "import1.py")
+        import1 = pyutilib.misc.import_file(f"{currdir}import1.py")
         try:
             c = import1.a
         except:
             self.fail("test_import_file - could not access data in import.py")
 
     def test_import_file_context3(self):
-        pyutilib.misc.import_file(currdir + "import1.py", context=globals())
-        if not "import1" in globals():
+        pyutilib.misc.import_file(f"{currdir}import1.py", context=globals())
+        if "import1" not in globals():
             self.fail("test_import_file - failed to import the import1.py file")
 
     def test_import_exception(self):
         orig_path = list(sys.path)
         with self.assertRaisesRegexp(RuntimeError, "raised during import"):
-            pyutilib.misc.import_file(currdir + "import_exception.py")
+            pyutilib.misc.import_file(f"{currdir}import_exception.py")
         self.assertIsNot(orig_path, sys.path)
         self.assertEqual(orig_path, sys.path)
 
@@ -122,7 +133,7 @@ class TestImportFile(unittest.TestCase):
             self.fail('Module does not exist. Expected ImportError.')
 
     def test3(self):
-        dirname = currdir + 'import_data' + os.sep + 'a'
+        dirname = f'{currdir}import_data{os.sep}a'
         sys.path.insert(0, dirname)
         context = {}
         m = pyutilib.misc.import_file('tfile', context=context)
@@ -131,14 +142,14 @@ class TestImportFile(unittest.TestCase):
         sys.path.remove(dirname)
 
     def test4(self):
-        dirname = currdir + 'import_data' + os.sep + 'a'
+        dirname = f'{currdir}import_data{os.sep}a'
         sys.path.insert(0, dirname)
         context = {}
         m = pyutilib.misc.import_file('tfile', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
         sys.path.remove(dirname)
-        dirname = currdir + 'import_data' + os.sep + 'b'
+        dirname = f'{currdir}import_data{os.sep}b'
         sys.path.insert(0, dirname)
         m = pyutilib.misc.import_file('tfile', context=context, name='junk')
         self.assertEqual(id(m), id(context['junk']))
@@ -146,14 +157,14 @@ class TestImportFile(unittest.TestCase):
         sys.path.remove(dirname)
 
     def test4a(self):
-        dirname = currdir + 'import_data' + os.sep + 'a'
+        dirname = f'{currdir}import_data{os.sep}a'
         sys.path.insert(0, dirname)
         context = {}
         m = pyutilib.misc.import_file('tfile', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
         sys.path.remove(dirname)
-        dirname = currdir + 'import_data' + os.sep + 'b'
+        dirname = f'{currdir}import_data{os.sep}b'
         sys.path.insert(0, dirname)
         m = pyutilib.misc.import_file('tfile', context=context)
         self.assertEqual(id(m), id(context['tfile']))
@@ -161,62 +172,62 @@ class TestImportFile(unittest.TestCase):
         sys.path.remove(dirname)
 
     def test5(self):
-        dirname = currdir + 'import_data' + os.sep + 'a' + os.sep
+        dirname = f'{currdir}import_data{os.sep}a{os.sep}'
         context = {}
-        m = pyutilib.misc.import_file(dirname + 'tfile', context=context)
+        m = pyutilib.misc.import_file(f'{dirname}tfile', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
 
     def test6(self):
-        dirname = currdir + 'import_data' + os.sep + 'a' + os.sep
+        dirname = f'{currdir}import_data{os.sep}a{os.sep}'
         context = {}
-        m = pyutilib.misc.import_file(dirname + 'tfile', context=context)
+        m = pyutilib.misc.import_file(f'{dirname}tfile', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
-        dirname = currdir + 'import_data' + os.sep + 'b' + os.sep
-        m = pyutilib.misc.import_file(
-            dirname + 'tfile', context=context, name='junk')
+        dirname = f'{currdir}import_data{os.sep}b{os.sep}'
+        m = pyutilib.misc.import_file(f'{dirname}tfile', context=context, name='junk')
         self.assertEqual(id(m), id(context['junk']))
         self.assertEqual(m.f(), 'b')
 
     def test6a(self):
-        dirname = currdir + 'import_data' + os.sep + 'a' + os.sep
+        dirname = f'{currdir}import_data{os.sep}a{os.sep}'
         context = {}
-        m = pyutilib.misc.import_file(dirname + 'tfile', context=context)
+        m = pyutilib.misc.import_file(f'{dirname}tfile', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
-        dirname = currdir + 'import_data' + os.sep + 'b' + os.sep
-        m = pyutilib.misc.import_file(dirname + 'tfile', context=context)
+        dirname = f'{currdir}import_data{os.sep}b{os.sep}'
+        m = pyutilib.misc.import_file(f'{dirname}tfile', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
 
     def test7(self):
-        dirname = currdir + 'import_data' + os.sep + 'a' + os.sep
+        dirname = f'{currdir}import_data{os.sep}a{os.sep}'
         context = {}
-        m = pyutilib.misc.import_file(dirname + 'tfile.py', context=context)
+        m = pyutilib.misc.import_file(f'{dirname}tfile.py', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
 
     def test8(self):
-        dirname = currdir + 'import_data' + os.sep + 'a' + os.sep
+        dirname = f'{currdir}import_data{os.sep}a{os.sep}'
         context = {}
-        m = pyutilib.misc.import_file(dirname + 'tfile.py', context=context)
+        m = pyutilib.misc.import_file(f'{dirname}tfile.py', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
-        dirname = currdir + 'import_data' + os.sep + 'b' + os.sep
+        dirname = f'{currdir}import_data{os.sep}b{os.sep}'
         m = pyutilib.misc.import_file(
-            dirname + 'tfile.py', context=context, name='junk')
+            f'{dirname}tfile.py', context=context, name='junk'
+        )
         self.assertEqual(id(m), id(context['junk']))
         self.assertEqual(m.f(), 'b')
 
     def test8a(self):
-        dirname = currdir + 'import_data' + os.sep + 'a' + os.sep
+        dirname = f'{currdir}import_data{os.sep}a{os.sep}'
         context = {}
-        m = pyutilib.misc.import_file(dirname + 'tfile.py', context=context)
+        m = pyutilib.misc.import_file(f'{dirname}tfile.py', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
-        dirname = currdir + 'import_data' + os.sep + 'b' + os.sep
-        m = pyutilib.misc.import_file(dirname + 'tfile.py', context=context)
+        dirname = f'{currdir}import_data{os.sep}b{os.sep}'
+        m = pyutilib.misc.import_file(f'{dirname}tfile.py', context=context)
         self.assertEqual(id(m), id(context['tfile']))
         self.assertEqual(m.f(), 'a')
 
@@ -269,7 +280,7 @@ class TestImportFile(unittest.TestCase):
             self.fail('Module does not exist. Expected ImportError.')
 
     def test12(self):
-        dirname = currdir + 'import_data'
+        dirname = f'{currdir}import_data'
         sys.path.insert(0, dirname)
         context = {}
         m = pyutilib.misc.import_file('tfile1.0', context=context)
@@ -278,7 +289,7 @@ class TestImportFile(unittest.TestCase):
         sys.path.remove(dirname)
 
     def test12a(self):
-        dirname = currdir + 'import_data'
+        dirname = f'{currdir}import_data'
         sys.path.insert(0, dirname)
         context = {}
         m = pyutilib.misc.import_file('tfile1.0', context=context, name='junk')
@@ -287,17 +298,18 @@ class TestImportFile(unittest.TestCase):
         sys.path.remove(dirname)
 
     def test13(self):
-        dirname = currdir + 'import_data' + os.sep
+        dirname = f'{currdir}import_data{os.sep}'
         context = {}
-        m = pyutilib.misc.import_file(dirname + 'tfile1.0', context=context)
+        m = pyutilib.misc.import_file(f'{dirname}tfile1.0', context=context)
         self.assertEqual(id(m), id(context['tfile1.0']))
         self.assertEqual(m.f(), 'tfile1.0')
 
     def test13a(self):
-        dirname = currdir + 'import_data' + os.sep
+        dirname = f'{currdir}import_data{os.sep}'
         context = {}
         m = pyutilib.misc.import_file(
-            dirname + 'tfile1.0', context=context, name='junk')
+            f'{dirname}tfile1.0', context=context, name='junk'
+        )
         self.assertEqual(id(m), id(context['junk']))
         self.assertEqual(m.f(), 'tfile1.0')
 

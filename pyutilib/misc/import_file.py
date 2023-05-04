@@ -65,7 +65,7 @@ def import_file(filename, context=None, name=None, clear_cache=False):
     # For 2.4 compatibility we will call endswith() twice.
     if modulename.endswith('.py') or modulename.endswith('.pyc'):
         if not os.path.exists(filename):
-            raise IOError("File %s does not exist" % (filename))
+            raise IOError(f"File {filename} does not exist")
         if filename.endswith('.pyc'):
             filename = filename[:-1]
         modulename = modulename.rsplit('.', 1)[0]
@@ -122,23 +122,22 @@ def import_file(filename, context=None, name=None, clear_cache=False):
         if is_file:
             # .py or .pyc were found in the filename
             pathname = filename
-        else:
-            if dirname is not None:
-                # find_module will return the .py file (never .pyc)
-                fp, pathname, description = imp.find_module(modulename,
-                                                            [dirname])
+        elif dirname is None:
+            try:
+                sys.path.insert(0, implied_dirname)
+                # find_module will return the .py file
+                # (never .pyc)
+                fp, pathname, description = imp.find_module(modulename)
                 fp.close()
-            else:
-                try:
-                    sys.path.insert(0, implied_dirname)
-                    # find_module will return the .py file
-                    # (never .pyc)
-                    fp, pathname, description = imp.find_module(modulename)
-                    fp.close()
-                except ImportError:
-                    raise
-                finally:
-                    sys.path.remove(implied_dirname)
+            except ImportError:
+                raise
+            finally:
+                sys.path.remove(implied_dirname)
+        else:
+            # find_module will return the .py file (never .pyc)
+            fp, pathname, description = imp.find_module(modulename,
+                                                        [dirname])
+            fp.close()
         try:
             # Note: we are always handing load_source a .py file, but
             #       it will use the .pyc or .pyo file if it exists
@@ -149,9 +148,7 @@ def import_file(filename, context=None, name=None, clear_cache=False):
             _, line, _, txt = traceback.extract_tb(tb, 2)[-1]
             import logging
             logger = logging.getLogger('pyutilib.misc')
-            msg = ''
-            if isinstance(e, Exception):
-                msg = " raised %s:\n%s" % (et.__name__, e)
+            msg = " raised %s:\n%s" % (et.__name__, e) if isinstance(e, Exception) else ''
             logger.error('Failed to load python module "%s"\n'
                          '%s line %s ("%s")%s' %
                          (filename, pathname, line, txt, msg))
@@ -160,7 +157,7 @@ def import_file(filename, context=None, name=None, clear_cache=False):
     #
     # Add module to the given context
     #
-    if not context is None:
+    if context is not None:
         context[name] = module
     return module
 

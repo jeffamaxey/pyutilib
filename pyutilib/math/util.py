@@ -35,9 +35,7 @@ def approx_equal(A, B, abstol, reltol):
         relError = math.fabs((A - B) // B)
     else:
         relError = math.fabs((A - B) // A)
-    if relError <= reltol:
-        return True
-    return False
+    return relError <= reltol
 
 
 try:
@@ -48,18 +46,15 @@ try:
             return value
         if isinstance(value, six.string_types):
             try:
-                tmp = int(value)
-                return tmp
+                return int(value)
             except ValueError:
                 pass
             try:
-                tmp = long(value)
-                return tmp
+                return long(value)
             except ValueError:
                 pass
             try:
-                tmp = float(value)
-                return tmp
+                return float(value)
             except ValueError:
                 pass
         return value
@@ -70,13 +65,11 @@ except:
             return value
         if isinstance(value, six.string_types):
             try:
-                tmp = int(value)
-                return tmp
+                return int(value)
             except ValueError:
                 pass
             try:
-                tmp = float(value)
-                return tmp
+                return float(value)
             except ValueError:
                 pass
         return value
@@ -136,10 +129,7 @@ def factorial(z):
     if z < 0:
         raise ArithmeticError(
             "Cannot compute the factorial of a negative number")
-    if z == 0:
-        return 1
-    else:
-        return z * factorial(z - 1)
+    return 1 if z == 0 else z * factorial(z - 1)
 
 
 def perm(x, y):

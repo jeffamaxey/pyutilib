@@ -123,8 +123,10 @@ class _TestArchiveReaderBaseNested(object):
         tmpnames = a.extractall()
         for name in tmpnames:
             self.assertEqual(os.path.exists(name), True)
-        names = [a.normalize_name(name).replace(
-            a.normalize_name(a._workdir) + '/', '') for name in tmpnames]
+        names = [
+            a.normalize_name(name).replace(f'{a.normalize_name(a._workdir)}/', '')
+            for name in tmpnames
+        ]
         self.assertEqual(
             sorted(names),
             sorted(['directory', posixpath.join('directory', 'fileA.txt'),
@@ -169,8 +171,10 @@ class _TestArchiveReaderBaseNested(object):
         tmpnames = a.extractall()
         for name in tmpnames:
             self.assertEqual(os.path.exists(name), True)
-        names = [a.normalize_name(name).replace(
-            a.normalize_name(a._workdir) + '/', '') for name in tmpnames]
+        names = [
+            a.normalize_name(name).replace(f'{a.normalize_name(a._workdir)}/', '')
+            for name in tmpnames
+        ]
         self.assertEqual(sorted(names), sorted(['directory']))
         a.clear_extractions()
         for name in tmpnames:
@@ -201,8 +205,10 @@ class _TestArchiveReaderBaseNested(object):
         tmpnames = a.extractall()
         for name in tmpnames:
             self.assertEqual(os.path.exists(name), True)
-        names = [a.normalize_name(name).replace(
-            a.normalize_name(a._workdir) + '/', '') for name in tmpnames]
+        names = [
+            a.normalize_name(name).replace(f'{a.normalize_name(a._workdir)}/', '')
+            for name in tmpnames
+        ]
         self.assertEqual(
             sorted(names),
             sorted(['directory', posixpath.join('directory', 'fileA.txt'),

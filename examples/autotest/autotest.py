@@ -18,7 +18,9 @@ currdir = dirname(abspath(__file__))+os.sep
 import pyutilib.th as unittest
 import pyutilib.autotest
 
-pyutilib.autotest.create_test_suites(filename=currdir+'example1.yml', _globals=globals())
+pyutilib.autotest.create_test_suites(
+    filename=f'{currdir}example1.yml', _globals=globals()
+)
 
 if __name__ == "__main__":
     unittest.main()

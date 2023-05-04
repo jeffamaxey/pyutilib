@@ -26,9 +26,8 @@ class JsonTestParser(SingletonPlugin):
         self.name = 'json'
 
     def load_test_config(self, filename):
-        INPUT = open(filename, 'r')
-        repn = json.load(INPUT)
-        INPUT.close()
+        with open(filename, 'r') as INPUT:
+            repn = json.load(INPUT)
         return repn
 
     def print_test_config(self, repn):

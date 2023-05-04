@@ -24,40 +24,32 @@ class ExternalExecutable(Plugin):
     implements(IExternalExecutable, service=True)
 
     def __init__(self, **kwds):
-        if 'doc' in kwds:
-            self.exec_doc = kwds["doc"]
-        else:
-            self.exec_doc = ""
-        if 'name' in kwds:
-            self.name = kwds['name']
-            declare_option(
-                kwds['name'],
-                local_name="executable",
-                section="executables",
-                default=None,
-                doc=self.exec_doc,
-                cls=ExecutableOption)
-        else:
+        self.exec_doc = kwds["doc"] if 'doc' in kwds else ""
+        if 'name' not in kwds:
             raise PluginError("An ExternalExectuable requires a name")
-        if 'path' in kwds:
-            self.path = kwds['path']
-        else:
-            self.path = None
-        if 'validate' in kwds:
-            self.validate = kwds['validate']
-        else:
-            self.validate = None
+        self.name = kwds['name']
+        declare_option(
+            kwds['name'],
+            local_name="executable",
+            section="executables",
+            default=None,
+            doc=self.exec_doc,
+            cls=ExecutableOption)
+        self.path = kwds.get('path', None)
+        self.validate = kwds.get('validate', None)
         self.find_executable()
 
     def find_executable(self):
-        if not self.path is None:
-            self.exec_default = self.path
-        else:
-            self.exec_default = pyutilib.misc.search_file(
+        self.exec_default = (
+            pyutilib.misc.search_file(
                 self.name,
                 implicitExt=pyutilib.misc.executable_extension,
                 executable=True,
-                validate=self.validate)
+                validate=self.validate,
+            )
+            if self.path is None
+            else self.path
+        )
 
     def enabled(self):
         return self._enable and ((self.executable is not None) or
@@ -67,6 +59,4 @@ class ExternalExecutable(Plugin):
         if not self.enabled():
             return None
         tmp = self.executable
-        if tmp is None:
-            return self.exec_default
-        return tmp
+        return self.exec_default if tmp is None else tmp

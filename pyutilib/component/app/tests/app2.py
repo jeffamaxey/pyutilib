@@ -6,6 +6,6 @@ import sys
 currdir = sys.argv[-1] + os.sep
 
 app = pyutilib.component.app.SimpleApplication("foo")
-pyutilib.misc.setup_redirect(currdir + "summary.out")
+pyutilib.misc.setup_redirect(f"{currdir}summary.out")
 app.config.summarize()
 pyutilib.misc.reset_redirect()

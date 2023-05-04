@@ -17,11 +17,7 @@ import stat
 import sys
 import warnings
 
-if (sys.platform[0:3] == "win"):  #pragma:nocover
-    executable_extension = ".exe"
-else:  #pragma:nocover
-    executable_extension = ""
-
+executable_extension = ".exe" if sys.platform[:3] == "win" else ""
 import six
 
 
@@ -40,10 +36,11 @@ def deprecated(deprecated_function):
 
     def wrapper_function(*args, **kwargs):
         warnings.warn_explicit(
-            "Use of deprecated function '%s'." % deprecated_function.__name__,
+            f"Use of deprecated function '{deprecated_function.__name__}'.",
             category=DeprecationWarning,
             filename=deprecated_function.__code__.co_filename,
-            lineno=deprecated_function.__code__.co_firstlineno + 1)
+            lineno=deprecated_function.__code__.co_firstlineno + 1,
+        )
         return deprecated_function(*args, **kwargs)
 
     return wrapper_function
@@ -53,7 +50,7 @@ def tostr(array):
     """ Create a string from an array of numbers """
     tmpstr = ""
     for val in array:
-        tmpstr = tmpstr + " " + repr(val)
+        tmpstr = f"{tmpstr} {repr(val)}"
     return tmpstr.strip()
 
 
@@ -62,7 +59,7 @@ def flatten(x):
 
     def _flatten(x, ans_):
         for el in x:
-            if not type(el) is str and hasattr(el, "__iter__"):
+            if type(el) is not str and hasattr(el, "__iter__"):
                 # NB: isinstance can be SLOW if it is going to return false,
                 # so we will do one extra hasattr() check that will pretty
                 # much assure that it will be True
@@ -109,10 +106,7 @@ def recursive_flatten_tuple(val):
         return val
     rv = ()
     for i in val:
-        if type(i) is tuple:
-            rv = rv + flatten_tuple(i)
-        else:
-            rv = rv + (i,)
+        rv = rv + flatten_tuple(i) if type(i) is tuple else rv + (i,)
     return rv
 
 
@@ -183,16 +177,12 @@ def quote_split(regex_str, src=None):
             inQuote = ''
         else:
             if not inQuote and start <= idx:
-                g = regex.match(src[idx:])
-                if g:
+                if g := regex.match(src[idx:]):
                     tokens.append(src[start:idx])
                     start = idx + len(g.group())
-                    # NB: we still want to parse the remainder of the patern
-                    # for things like escape characters so that we correctly
-                    # parse the entire source string; hence, no 'elif'
             if char == '\\':
                 escaping = True
-            elif not inQuote and (char == '"' or char == "'"):
+            elif not inQuote and char in ['"', "'"]:
                 inQuote = char
 
     if inQuote:
@@ -202,7 +192,7 @@ def quote_split(regex_str, src=None):
     return tokens
 
 
-def traceit(frame, event, arg):  #pragma:nocover
+def traceit(frame, event, arg):    #pragma:nocover
     """
     A utility for tracing Python executions.  Use this function by
     executing:
@@ -219,7 +209,7 @@ def traceit(frame, event, arg):  #pragma:nocover
             filename = filename[:-1]
         name = frame.f_globals["__name__"]
         line = linecache.getline(filename, lineno)
-        print("%s:%s: %s" % (name, lineno, line.rstrip()))
+        print(f"{name}:{lineno}: {line.rstrip()}")
     return traceit
 
 
@@ -228,9 +218,9 @@ def tuplize(dlist, d, name):
     Convert a list into a list of tuples.
     """
     if len(dlist) % d != 0:
-        raise ValueError("Cannot tuplize data for set " + str(
-            name) + " because its length " + str(len(dlist)) +
-                         " is not a multiple of dimen " + str(d))
+        raise ValueError(
+            f"Cannot tuplize data for set {str(name)} because its length {len(dlist)} is not a multiple of dimen {str(d)}"
+        )
     j = 0
     t = []
     rv = []
@@ -249,8 +239,7 @@ def find_files(directory, *args):
         for basename in files:
             for pattern in args:
                 if fnmatch.fnmatch(basename, pattern):
-                    filename = os.path.join(root, basename)
-                    yield filename
+                    yield os.path.join(root, basename)
 
 
 def search_file(filename,
@@ -276,13 +265,13 @@ def search_file(filename,
         #
         # Use the PATH environment if it is defined and not empty
         #
-        if "PATH" in os.environ and os.environ["PATH"] != "":
-            search_path = os.environ['PATH'].split(os.pathsep)
-        else:
-            search_path = os.defpath.split(os.pathsep)
-    else:
-        if isinstance(search_path, six.string_types):
-            search_path = (search_path,)
+        search_path = (
+            os.environ['PATH'].split(os.pathsep)
+            if "PATH" in os.environ and os.environ["PATH"] != ""
+            else os.defpath.split(os.pathsep)
+        )
+    elif isinstance(search_path, six.string_types):
+        search_path = (search_path,)
     for path in search_path:
         for ext in ('', implicitExt):
             test_fname = os.path.join(path, filename + ext)
@@ -298,15 +287,15 @@ def search_file(filename,
 def sort_index(l):
     """Returns a list, where the i-th value is the index of the i-th smallest
     value in the data 'l'"""
-    return list(index
-                for index, item in sorted(
-                    enumerate(l), key=lambda item: item[1]))
+    return [
+        index for index, item in sorted(enumerate(l), key=lambda item: item[1])
+    ]
 
 
 def count_lines(file):
     """Returns the number of lines in a file."""
     count = 0
-    for line in open(file, "r"):
+    for _ in open(file, "r"):
         count = count + 1
     return count
 
@@ -348,7 +337,7 @@ class Container(dict):
                     kw[item[:r]] = val
         dict.__init__(self, kw)
         self.__dict__.update(kw)
-        if not '_name_' in kw:
+        if '_name_' not in kw:
             self._name_ = self.__class__.__name__
 
     def update(self, d):
@@ -393,13 +382,13 @@ class Container(dict):
             return dict.__getitem__(self, name)
         except:
             if name[0] == '_':
-                raise AttributeError("Unknown attribute %s" % name)
+                raise AttributeError(f"Unknown attribute {name}")
         return None
 
     def __repr__(self):
         attrs = sorted("%s = %r" % (k, v) for k, v in self.__dict__.items()
                        if not k.startswith("_"))
-        return "%s(%s)" % (self.__class__.__name__, ", ".join(attrs))
+        return f'{self.__class__.__name__}({", ".join(attrs)})'
 
     def __str__(self):
         return self.as_string()
@@ -423,9 +412,9 @@ class Container(dict):
                             if isinstance(v_, Container):
                                 text.append('\n' + v_.__str__(nesting + 1))
                             else:
-                                text.append(" " + repr(v_))
+                                text.append(f" {repr(v_)}")
                 else:
-                    text.append(' ' + repr(v))
+                    text.append(f' {repr(v)}')
                 attrs.append("".join(text))
         attrs.sort()
         return "\n".join(attrs)
@@ -451,7 +440,7 @@ def create_hardlink(src, dst):
         # Windows; Python added native support for hard links in 3.2
         import ctypes
         if not ctypes.windll.kernel32.CreateHardLinkA(dst, src, 0):
-            raise OSError("Failed to create hard link for file %s" % (src))
+            raise OSError(f"Failed to create hard link for file {src}")
     else:
         # Unix; Windows >= Python3.2
         os.link(src, dst)

@@ -67,7 +67,7 @@ def with_metaclass(meta, *bases):
 # ignore the log messages.
 #
 def logger_factory(namespace):
-    log = logging.getLogger('pyutilib.component.core.' + namespace)
+    log = logging.getLogger(f'pyutilib.component.core.{namespace}')
 
     class NullHandler(logging.Handler):
 
@@ -101,7 +101,7 @@ class PluginEnvironment(object):
             if name is None:
                 name = "env%d" % PluginGlobals.env_counter
             if name in PluginGlobals.env:
-                raise PluginError("Environment %s is already defined" % name)
+                raise PluginError(f"Environment {name} is already defined")
         #
         self.loaders = None
         self.loader_paths = None
@@ -162,8 +162,7 @@ class PluginEnvironment(object):
             elif type(path) is list:
                 search_path += path
             else:
-                raise PluginError("Unknown type of path argument: " + str(
-                    type(path)))
+                raise PluginError(f"Unknown type of path argument: {str(type(path))}")
         for item in self.loader_paths:
             search_path += item.get_load_path()
         self.log.info("Loading services to environment "
@@ -172,10 +171,7 @@ class PluginEnvironment(object):
         # Compile the enable expression
         #
         if type(auto_disable) is bool:
-            if auto_disable:
-                disable_p = re.compile("")
-            else:
-                disable_p = re.compile("^$")
+            disable_p = re.compile("") if auto_disable else re.compile("^$")
         else:
             disable_p = re.compile(auto_disable)
         #
@@ -216,8 +212,7 @@ class ExtensionPoint(object):
             raise PluginError(
                 "Must specify interface class used in the ExtensionPoint")
         self.interface = args[0]
-        self.__doc__ = 'List of services that implement `%s`' % \
-            self.interface.__name__
+        self.__doc__ = f'List of services that implement `{self.interface.__name__}`'
 
     def __iter__(self):
         """Return an iterator to a set of services that match the interface of
@@ -268,10 +263,10 @@ class ExtensionPoint(object):
         TODO - Can this support caching?
         How would that relate to the weakref test?
         """
-        strkey = str(key)
         ans = set()
-        remove = set()
         if self.interface in PluginGlobals.interface_services:
+            strkey = str(key)
+            remove = set()
             for id_ in PluginGlobals.interface_services[self.interface]:
                 if id_ not in PluginGlobals.plugin_instances:
                     remove.add(id_)
@@ -296,11 +291,12 @@ class ExtensionPoint(object):
 
         TODO: use the 'simple' argument
         """
-        env_str = ""
-        for env_ in itervalues(PluginGlobals.env):
-            if self.interface in set(itervalues(env_.interfaces)):
-                env_str += " env=%s" % env_.name
-        return '<ExtensionPoint %s%s>' % (self.interface.__name__, env_str)
+        env_str = "".join(
+            f" env={env_.name}"
+            for env_ in itervalues(PluginGlobals.env)
+            if self.interface in set(itervalues(env_.interfaces))
+        )
+        return f'<ExtensionPoint {self.interface.__name__}{env_str}>'
 
 
 class PluginGlobals(object):
@@ -350,7 +346,7 @@ class PluginGlobals(object):
     def add_env(name=None, validate=False):
         if name is not None and not isinstance(name, string_types):
             if validate and name.name in PluginGlobals.env:
-                raise PluginError("Environment %s is already defined" % name)
+                raise PluginError(f"Environment {name} is already defined")
             # We assume we have a PluginEnvironment object here
             PluginGlobals.env[name.name] = name
             PluginGlobals.env_map[name.env_id] = name.name
@@ -362,7 +358,7 @@ class PluginGlobals(object):
         else:
             env_ = PluginGlobals.env.get(name, None)
             if validate and env_ is not None:
-                raise PluginError("Environment %s is already defined" % name)
+                raise PluginError(f"Environment {name} is already defined")
             if env_ is None:
                 env_ = PluginEnvironment(name)
                 PluginGlobals.env[env_.name] = env_
@@ -375,21 +371,20 @@ class PluginGlobals(object):
 
     @staticmethod
     def pop_env():
-        if len(PluginGlobals.env_stack) > 1:
-            name = PluginGlobals.env_stack.pop()
-            env_ = PluginGlobals.env[name]
-            if __debug__ and env_.log.isEnabledFor(logging.DEBUG):
-                env_.log.debug("Popping environment %r from the "
-                               "PluginGlobals stack" % env_.name)
-            return env_
-        else:
+        if len(PluginGlobals.env_stack) <= 1:
             return PluginGlobals.env[PluginGlobals.env_stack[0]]
+        name = PluginGlobals.env_stack.pop()
+        env_ = PluginGlobals.env[name]
+        if __debug__ and env_.log.isEnabledFor(logging.DEBUG):
+            env_.log.debug("Popping environment %r from the "
+                           "PluginGlobals stack" % env_.name)
+        return env_
 
     @staticmethod
     def remove_env(name, cleanup=False, singleton=True):
         tmp = PluginGlobals.env.get(name, None)
         if tmp is None:
-            raise PluginError("No environment %s is defined" % name)
+            raise PluginError(f"No environment {name} is defined")
         # print "HERE - remove", name, tmp.env_id
         del PluginGlobals.env_map[tmp.env_id]
         del PluginGlobals.env[name]
@@ -450,29 +445,27 @@ class PluginGlobals(object):
     def pprint(**kwds):
         """A pretty-print function"""
 
-        ans = {}
-        s = "#------------------------------"\
-            "--------------------------------\n"
-        i = 1
-        ans['Environment Stack'] = {}
-        s += "Environment Stack:\n"
-        for env in PluginGlobals.env_stack:
+        ans = {'Environment Stack': {}}
+        s = (
+            "#------------------------------"
+            "--------------------------------\n" + "Environment Stack:\n"
+        )
+        for i, env in enumerate(PluginGlobals.env_stack, start=1):
             ans['Environment Stack'][i] = env
-            s += "  '" + str(i) + "': " + env + "\n"
-            i += 1
+            s += f"  '{str(i)}': {env}" + "\n"
         s += "#------------------------------"\
-             "--------------------------------\n"
+                 "--------------------------------\n"
         ans['Interfaces Declared'] = {}
         s += "Interfaces Declared:\n"
         keys = []
         for env_ in itervalues(PluginGlobals.env):
-            keys.extend(interface_ for interface_ in env_.interfaces)
+            keys.extend(iter(env_.interfaces))
         keys.sort()
         for key in keys:
             ans['Interfaces Declared'][key] = None
-            s += "  " + key + ":\n"
+            s += f"  {key}" + ":\n"
         s += "#------------------------------"\
-             "--------------------------------\n"
+                 "--------------------------------\n"
         ans['Interfaces Declared by Environment'] = {}
         s += "Interfaces Declared by Environment:\n"
         for env_name in sorted(PluginGlobals.env.keys()):
@@ -480,24 +473,24 @@ class PluginGlobals(object):
             if len(env_.interfaces) == 0:
                 continue
             ans['Interfaces Declared by Environment'][env_.name] = {}
-            s += "  " + env_.name + ":\n"
+            s += f"  {env_.name}" + ":\n"
             for interface_ in sorted(env_.interfaces.keys()):
                 ans['Interfaces Declared by Environment'][env_.name][
                     interface_] = None
-                s += "    " + interface_ + ":\n"
+                s += f"    {interface_}" + ":\n"
         #
         # Coverage is disabled here because different platforms give different
         # results.
         #
         if kwds.get('plugins', True):  # pragma:nocover
             s += "#---------------------------"\
-                 "-----------------------------------\n"
+                     "-----------------------------------\n"
             ans['Plugins by Environment'] = {}
             s += "Plugins by Environment:\n"
             for env_name in sorted(PluginGlobals.env.keys()):
                 env_ = PluginGlobals.env[env_name]
                 ans['Plugins by Environment'][env_.name] = {}
-                s += "  " + env_.name + ":\n"
+                s += f"  {env_.name}" + ":\n"
                 flag = True
                 for service_ in env_.plugins():
                     flag = False
@@ -510,34 +503,32 @@ class PluginGlobals(object):
                         if interface not in PluginGlobals.interface_services:
                             continue
                         service_active = service_._id in \
-                            PluginGlobals.interface_services[interface]
+                                PluginGlobals.interface_services[interface]
                         break
                     service_s = service_.__repr__(
                         simple=not kwds.get('show_ids', True))
                     ans['Plugins by Environment'][env_.name][service_s] = {}
-                    s += "    " + service_s + ":\n"
+                    s += f"    {service_s}" + ":\n"
                     if kwds.get('show_ids', True):
                         ans['Plugins by Environment'][env_.name][service_s][
                             'name'] = service_.name
-                        s += "       name:      " + service_.name + "\n"
+                        s += f"       name:      {service_.name}" + "\n"
                     ans['Plugins by Environment'][env_.name][service_s][
                         'id'] = str(service_._id)
-                    s += "       id:        " + str(service_._id) + "\n"
+                    s += f"       id:        {str(service_._id)}" + "\n"
                     ans['Plugins by Environment'][env_.name][service_s][
                         'singleton'] = str(service_.__singleton__)
-                    s += "       singleton: " + \
-                        str(service_.__singleton__) + "\n"
+                    s += f"       singleton: {str(service_.__singleton__)}" + "\n"
                     ans['Plugins by Environment'][env_.name][service_s][
                         'service'] = str(service_active)
-                    s += "       service:   " + str(service_active) + "\n"
+                    s += f"       service:   {str(service_active)}" + "\n"
                     ans['Plugins by Environment'][env_.name][service_s][
                         'disabled'] = str(not service_.enabled())
-                    s += "       disabled:  " + \
-                        str(not service_.enabled()) + "\n"
+                    s += f"       disabled:  {not service_.enabled()}" + "\n"
                 if flag:
                     s += "       None:\n"
         s += "#------------------------------"\
-             "--------------------------------\n"
+                 "--------------------------------\n"
         ans['Plugins by Interface'] = {}
         s += "Plugins by Interface:\n"
         tmp = {}
@@ -553,9 +544,9 @@ class PluginGlobals(object):
         for key in sorted(keys, key=lambda v: v.__name__.upper()):
             ans['Plugins by Interface'][str(key.__name__)] = {}
             if key.__name__ == "":  # pragma:nocover
-                s += "  `" + str(key.__name__) + "`:\n"
+                s += f"  `{str(key.__name__)}" + "`:\n"
             else:
-                s += "  " + str(key.__name__) + ":\n"
+                s += f"  {str(key.__name__)}" + ":\n"
             ttmp = tmp[key]
             ttmp.sort()
             if len(ttmp) == 0:
@@ -563,9 +554,9 @@ class PluginGlobals(object):
             else:
                 for item in ttmp:
                     ans['Plugins by Interface'][str(key.__name__)][item] = None
-                    s += "    " + item + ":\n"
+                    s += f"    {item}" + ":\n"
         s += "#-------------------------------"\
-             "-------------------------------\n"
+                 "-------------------------------\n"
         ans['Plugins by Python Module'] = {}
         s += "Plugins by Python Module:\n"
         tmp = {}
@@ -577,19 +568,15 @@ class PluginGlobals(object):
             # This is a hack to ensure consistency in the tests
             tmp['pyutilib.component.core.tests.test_core'] = tmp['__main__']
             del tmp['__main__']
-        keys = list(tmp.keys())
-        keys.sort()
+        keys = sorted(tmp.keys())
         for key in keys:
             ans['Plugins by Python Module'][str(key)] = {}
-            if key == "":  # pragma:nocover
-                s += "  `" + str(key) + "`:\n"
-            else:
-                s += "  " + str(key) + ":\n"
+            s += f"  `{str(key)}" + "`:\n" if key == "" else f"  {str(key)}" + ":\n"
             ttmp = tmp[key]
             ttmp.sort()
             for item in ttmp:
                 ans['Plugins by Python Module'][str(key)][item] = None
-                s += "    " + item + ":\n"
+                s += f"    {item}" + ":\n"
         if kwds.get('json', False):
             import json
             print(
@@ -639,8 +626,7 @@ class InterfaceMeta(type):
         new_class = type.__new__(cls, name, bases, d)
         if name != "Interface":
             if name in PluginGlobals.get_env().interfaces:
-                raise PluginError("Interface %s has already been defined" %
-                                  name)
+                raise PluginError(f"Interface {name} has already been defined")
             PluginGlobals.get_env().interfaces[name] = new_class
         return new_class
 
@@ -746,16 +732,9 @@ class PluginMeta(type):
         # Create a boolean, which indicates whether this is
         # a singleton class.
         #
-        if True in [issubclass(x, SingletonPlugin) for x in bases]:
-            d['__singleton__'] = True
-        else:
-            d['__singleton__'] = False
-        #
-        # Add interfaces to the list of base classes if they are
-        # declared inherited.
-        #
-        flag = False
+        d['__singleton__'] = True in [issubclass(x, SingletonPlugin) for x in bases]
         bases = list(bases)
+        flag = False
         for interface in d.get('_inherited_interfaces', set()):
             if interface not in bases:
                 bases.append(interface)
@@ -780,9 +759,9 @@ class PluginMeta(type):
                     if _subclass:
                         continue
                     else:
-                        raise PluginError("Alias '%s' has already been "
-                                          "defined for interface '%s'" %
-                                          (_name, str(_interface)))
+                        raise PluginError(
+                            f"Alias '{_name}' has already been defined for interface '{str(_interface)}'"
+                        )
                 _interface._factory_active[_name] = name
                 _interface._factory_doc[_name] = _doc
                 _interface._factory_cls[_name] = new_class
@@ -796,7 +775,7 @@ class PluginMeta(type):
             __instance__ = new_class()
             PluginGlobals.plugin_instances[__instance__._id] = __instance__
             PluginGlobals.get_env().singleton_services[new_class] = \
-                __instance__._id
+                    __instance__._id
         else:
             __instance__ = None
         #

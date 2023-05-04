@@ -105,7 +105,7 @@ def run(package, basedir, argv, use_exec=use_exec, env=None):
         os.chdir(options.dir)
 
     CWD = os.getcwd()
-    print("Running tests in directory %s" % (CWD,))
+    print(f"Running tests in directory {CWD}")
 
     if platform == 'win':
         binDir = os.path.join(sys.exec_prefix, 'Scripts')
@@ -126,12 +126,8 @@ def run(package, basedir, argv, use_exec=use_exec, env=None):
         binDir = os.path.join(sys.exec_prefix, 'bin')
         nosetests = os.path.join(binDir, 'nosetests')
 
-    if os.path.exists(nosetests):
-        cmd = [nosetests]
-    else:
-        cmd = ['nosetests']
-
-    if (platform == 'win' and sys.version_info[0:2] >= (3, 8)):
+    cmd = [nosetests] if os.path.exists(nosetests) else ['nosetests']
+    if platform == 'win' and sys.version_info[:2] >= (3, 8):
         #######################################################
         # This option is required due to a (likely) bug within nosetests.
         # Nose is no longer maintained, but this workaround is based on a public forum suggestion:
@@ -147,8 +143,8 @@ def run(package, basedir, argv, use_exec=use_exec, env=None):
         if options.cover_erase:
             cmd.append('--cover-erase')
         if options.pkg:
-            cmd.append('--cover-package=%s' % options.pkg)
-        #env['COVERAGE_FILE'] = os.path.join(CWD, '.coverage')
+            cmd.append(f'--cover-package={options.pkg}')
+            #env['COVERAGE_FILE'] = os.path.join(CWD, '.coverage')
 
     if options.verbose:
         cmd.append('-v')
@@ -165,9 +161,8 @@ def run(package, basedir, argv, use_exec=use_exec, env=None):
 
     if options.xunit:
         cmd.append('--with-xunit')
-        cmd.append('--xunit-file=TEST-' + package[0] + '.xml')
+        cmd.append(f'--xunit-file=TEST-{package[0]}.xml')
 
-    attr = []
     _with_performance = False
     if 'PYUTILIB_UNITTEST_CATEGORY' in env:
         _categories = TestCase.parse_categories(
@@ -181,6 +176,7 @@ def run(package, basedir, argv, use_exec=use_exec, env=None):
     # not built on pyutilib.th.TestCase)
     if not _categories:
         _categories = [ (('smoke',1),), (('pyutilib_th',0),) ]
+    attr = []
     # process each category set (that is, each conjunction of categories)
     for _category_set in _categories:
         _attrs = []
@@ -205,17 +201,17 @@ def run(package, basedir, argv, use_exec=use_exec, env=None):
             if _value:
                 _attrs.append(_category)
             else:
-                _attrs.append("(not %s)" % (_category,))
+                _attrs.append(f"(not {_category})")
             if _category == 'performance' and _value == 1:
                 _with_performance = True
         if _attrs:
             #attr.append('--eval-attr')
-            attr.append("--eval-attr=%s" % (' and '.join(_attrs),))
+            attr.append(f"--eval-attr={' and '.join(_attrs)}")
     cmd.extend(attr)
     if attr:
-        print(" ... for test categor%s: %s" %
-              ('y' if len(attr)<=2 else 'ies',
-               ' '.join(attr[1::2])))
+        print(
+            f" ... for test categor{'y' if len(attr) <= 2 else 'ies'}: {' '.join(attr[1::2])}"
+        )
 
     if _with_performance:
         cmd.append('--with-testdata')
@@ -233,8 +229,10 @@ def run(package, basedir, argv, use_exec=use_exec, env=None):
                 targets.add(arg)
     cmd.extend(list(targets))
 
-    print("Running...\n    %s\n" % (
-            ' '.join( (x if ' ' not in x else '"'+x+'"') for x in cmd ), ))
+    print(
+        "Running...\n    %s\n"
+        % (' '.join(x if ' ' not in x else f'"{x}"' for x in cmd),)
+    )
     rc = 0
     if sys.platform.startswith('java'):
         import subprocess
@@ -242,11 +240,12 @@ def run(package, basedir, argv, use_exec=use_exec, env=None):
         p.wait()
         rc = p.returncode
     elif options.output:
-        sys.stdout.write("Redirecting output to file '%s' ..." % options.output)
+        sys.stdout.write(f"Redirecting output to file '{options.output}' ...")
         rc, _ = pyutilib.subprocess.run(cmd, env=env, outfile=options.output)
-    elif use_exec and not (
-            sys.platform.startswith('win')
-            and sys.version_info[:2] in ((3,4),(3,5)) ):
+    elif use_exec and (
+        not sys.platform.startswith('win')
+        or sys.version_info[:2] not in ((3, 4), (3, 5))
+    ):
         # NOTE: execvpe seems to generate a fatal error on Windows with
         # 3.4 and 3.5.
         #

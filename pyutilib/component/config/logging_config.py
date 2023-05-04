@@ -32,7 +32,7 @@ class LoggingConfig(Plugin):
             section = "logging"
             section_re = None
         else:
-            section = "logging." + namespace
+            section = f"logging.{namespace}"
             section_re = "^logging$"
         #
         declare_option(
@@ -64,8 +64,9 @@ class LoggingConfig(Plugin):
             "log_file",
             section=section,
             section_re=section_re,
-            default=namespace + '.log',
-            doc="""If `log_type` is `file`, this should be a path to the log-file.""")
+            default=f'{namespace}.log',
+            doc="""If `log_type` is `file`, this should be a path to the log-file.""",
+        )
         #
         declare_option(
             "log_level",
@@ -104,8 +105,8 @@ class LoggingConfig(Plugin):
         objects.
         """
         sys.stdout.flush()
-        logger = logging.getLogger('pyutilib.component.core.' + self.namespace)
-        if not self._hdlr is None:
+        logger = logging.getLogger(f'pyutilib.component.core.{self.namespace}')
+        if self._hdlr is not None:
             logger.removeHandler(self._hdlr)
         #
         # Set logging level
@@ -132,7 +133,7 @@ class LoggingConfig(Plugin):
             for plugin in self.env_plugins:
                 (flag, count) = plugin.matches(self.namespace)
                 tmp = plugin.get_option("path")
-                if flag and not tmp is None:
+                if flag and tmp is not None:
                     path = tmp
                     break
             if path is None:
@@ -156,12 +157,10 @@ class LoggingConfig(Plugin):
         if format is None:
             format = '[env=%(env)s where=%(module)s] %(levelname)s - %(message)s'
             if self.timestamp and logtype in ('file', 'stderr'):
-                format = '%(asctime)s ' + format
+                format = f'%(asctime)s {format}'
             format = format.replace('$(', '%(') \
-                    .replace('%(env)s', PluginGlobals.get_env().name)
-        datefmt = ''
-        if self.timestamp and self.log_type == 'stderr':
-            datefmt = '%X'
+                        .replace('%(env)s', PluginGlobals.get_env().name)
+        datefmt = '%X' if self.timestamp and self.log_type == 'stderr' else ''
         formatter = logging.Formatter(format, datefmt)
         #
         #  Define the handler

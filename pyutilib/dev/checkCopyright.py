@@ -20,12 +20,9 @@ def recurse(dir):
 
 
 def match(filename, pat):
-    INPUT = open(filename, 'r')
-    fstring = INPUT.read()
-    INPUT.close()
-    if pat.search(fstring):
-        return True
-    return False
+    with open(filename, 'r') as INPUT:
+        fstring = INPUT.read()
+    return bool(pat.search(fstring))
 
 
 def main():
@@ -34,9 +31,8 @@ def main():
     if sys.argv[1] == '-c':
         cfile = sys.argv[2]
         files = sys.argv[3:]
-        INPUT = open(cfile, 'r')
-        cstring = INPUT.read()
-        INPUT.close()
+        with open(cfile, 'r') as INPUT:
+            cstring = INPUT.read()
         pat = re.compile(cstring)
     else:
         cfile = None
@@ -49,9 +45,9 @@ def main():
             if not match(filename, pat):
                 badfiles.append(filename)
 
-    print("Total number of files missing copyright: " + str(len(badfiles)))
-    print("Total number of files checked:           " + str(nfiles))
-    if len(badfiles) > 0:
+    print(f"Total number of files missing copyright: {len(badfiles)}")
+    print(f"Total number of files checked:           {str(nfiles)}")
+    if badfiles:
         print("")
         print("Bad Files")
         print("-" * 40)

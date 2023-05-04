@@ -21,10 +21,7 @@ class SimpleApplication(object):
 
     def __init__(self, name, filename=None):
         self.name = name
-        if filename is None:
-            self.filename = 'config.ini'
-        else:
-            self.filename = filename
+        self.filename = 'config.ini' if filename is None else filename
         self.env = pyutilib.component.core.PluginGlobals.add_env(self.name)
         self.config = pyutilib.component.config.Configuration(filename)
         self._env_config = pyutilib.component.config.EnvironmentConfig(name)

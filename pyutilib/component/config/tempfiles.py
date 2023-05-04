@@ -57,7 +57,7 @@ class TempfileManagerPlugin(ManagedSingletonPlugin):
     implements(ITempfileManager)
 
     def __init__(self, **kwds):
-        if getattr(self, '_initialized', False) is True:
+        if getattr(self, '_initialized', False):
             return
         self._initialized = True
         #
@@ -82,10 +82,7 @@ class TempfileManagerPlugin(ManagedSingletonPlugin):
 
         ans = tempfile.mkstemp(suffix=suffix, prefix=prefix, text=text, dir=dir)
         ans = list(ans)
-        if not os.path.isabs(ans[1]):  #pragma:nocover
-            fname = os.path.join(dir, ans[1])
-        else:
-            fname = ans[1]
+        fname = ans[1] if os.path.isabs(ans[1]) else os.path.join(dir, ans[1])
         os.close(ans[0])
         if self._ctr >= 0:
             new_fname = os.path.join(dir, prefix + str(self._ctr) + suffix)
@@ -129,7 +126,7 @@ class TempfileManagerPlugin(ManagedSingletonPlugin):
         """Declare this file to be temporary."""
         tmp = os.path.abspath(filename)
         if exists and not os.path.exists(tmp):
-            raise IOError("Temporary file does not exist: " + tmp)
+            raise IOError(f"Temporary file does not exist: {tmp}")
         self._tempfiles[-1].append(tmp)
 
     def clear_tempfiles(self, remove=True):
@@ -180,13 +177,11 @@ class TempfileManagerPlugin(ManagedSingletonPlugin):
                             except WindowsError:
                                 if deletion_errors_are_fatal:
                                     raise
-                                else:
-                                    # Failure to delete a tempfile
-                                    # should NOT be fatal
-                                    logger = logging.getLogger(
-                                        'pyutilib.component.config')
-                                    logger.warning("Unable to delete temporary "
-                                                   "file %s" % (filename,))
+                                # Failure to delete a tempfile
+                                # should NOT be fatal
+                                logger = logging.getLogger(
+                                    'pyutilib.component.config')
+                                logger.warning(f"Unable to delete temporary file {filename}")
 
         if len(self._tempfiles) == 0:
             self._tempfiles = [[]]

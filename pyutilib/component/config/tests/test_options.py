@@ -30,10 +30,9 @@ class DummyOption1(Option):
         try:
             return float(val)
         except ValueError:
-            raise OptionError('Expected float, got %s' % repr(value))
+            raise OptionError(f'Expected float, got {repr(value)}')
         except TypeError:
-            raise OptionError('Expected string or float type, got %s' %
-                              repr(value))
+            raise OptionError(f'Expected string or float type, got {repr(value)}')
 
 
 PluginGlobals.pop_env()
@@ -75,7 +74,7 @@ class TestOption(unittest.TestCase):
         self.assertEqual(FOO.name, "foo")
         self.assertTrue(FOO.default is None)
         self.assertTrue(FOO.section == "globals")
-        self.assertTrue(FOO.section_re == None)
+        self.assertTrue(FOO.section_re is None)
         self.assertTrue(FOO.__doc__ == "")
 
     def test_init3(self):
@@ -98,9 +97,9 @@ class TestOption(unittest.TestCase):
 
         obj = TMP_set_get1()
         self.assertTrue(obj.opt == 4)
-        self.assertTrue(obj.opt / 2 == 2)
+        self.assertTrue(obj.opt == 4)
         obj.opt = 6
-        self.assertTrue(obj.opt / 2 == 3)
+        self.assertTrue(obj.opt == 6)
         #
         # Verify that the TMP instance has value 6
         #
@@ -117,10 +116,10 @@ class TestOption(unittest.TestCase):
 
         obj = TMP_set_get2()
         self.assertEqual(type(obj.o1), int)
-        self.assertTrue(obj.o1 / 2 == 2)
+        self.assertTrue(obj.o1 == 4)
         obj.o1 = 6
-        self.assertTrue(obj.o1 / 2 == 3)
-        self.assertTrue(obj.o2 / 2 == 3)
+        self.assertTrue(obj.o1 == 6)
+        self.assertTrue(obj.o2 == 6)
 
     def test_set_get3(self):
         """Test validate nature of set/get for instance-specific options"""
@@ -135,13 +134,13 @@ class TestOption(unittest.TestCase):
         obj2 = TMP_set_get3("sec1")
         obj3 = TMP_set_get3("sec2")
         self.assertEqual(type(obj1.o1), int)
-        self.assertTrue(obj1.o1 / 2 == 2)
-        self.assertTrue(obj2.o1 / 2 == 2)
-        self.assertTrue(obj3.o1 / 2 == 2)
+        self.assertTrue(obj1.o1 == 4)
+        self.assertTrue(obj2.o1 == 4)
+        self.assertTrue(obj3.o1 == 4)
         obj1.o1 = 6
-        self.assertTrue(obj1.o1 / 2 == 3)
-        self.assertTrue(obj2.o1 / 2 == 3)
-        self.assertTrue(obj3.o1 / 2 == 2)
+        self.assertTrue(obj1.o1 == 6)
+        self.assertTrue(obj2.o1 == 6)
+        self.assertTrue(obj3.o1 == 4)
 
     def test_repr(self):
         """Test string repn"""
@@ -154,8 +153,7 @@ class TestOption(unittest.TestCase):
         obj = TMP_repr()
         if re.match("\<Option \[globals\] 'o1'\>",
                     str(ep.service("o1"))) is None:
-            self.fail("Expected globals:o1, but this option is %s" %
-                      str(ep.service("o1")))
+            self.fail(f'Expected globals:o1, but this option is {str(ep.service("o1"))}')
         self.assertFalse(
             re.match("\<Option \[globals\] 'o1'\>", str(ep.service("o1"))) is
             None)
@@ -308,11 +306,7 @@ class TestOption(unittest.TestCase):
     def test_path(self):
         """Test path"""
         ep = ExtensionPoint(IOption)
-        if sys.platform == "win32":
-            o1_default = "C:/default"
-        else:
-            o1_default = "/dev//default"
-
+        o1_default = "C:/default" if sys.platform == "win32" else "/dev//default"
         class TMP_path(Plugin):
             declare_option(
                 "o1", cls=FileOption, default=o1_default, directory="/dev/null")

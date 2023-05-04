@@ -106,12 +106,11 @@ class Test(unittest.TestCase):
         self.assertEqual(opt['bar'], 'x')
         opt.xx = 1
         opt['yy'] = 2
-        self.assertEqual(
-            set(opt.keys()), set(['a', 'bar', 'c', 'foo', 'e', 'xx', 'yy']))
+        self.assertEqual(set(opt.keys()), {'a', 'bar', 'c', 'foo', 'e', 'xx', 'yy'})
         opt.x = pyutilib.misc.Container(a=1, b=2)
         self.assertEqual(
-            set(opt.keys()), set(
-                ['a', 'bar', 'c', 'foo', 'e', 'xx', 'yy', 'x']))
+            set(opt.keys()), {'a', 'bar', 'c', 'foo', 'e', 'xx', 'yy', 'x'}
+        )
         self.assertEqual(
             repr(opt),
             "Container(a = None, bar = 'x', c = 'd', e = '1 2 3', foo = 1, x = Container(a = 1, b = 2), xx = 1, yy = 2)")
@@ -128,8 +127,8 @@ xx: 1
 yy: 2""")
         opt._name_ = 'CONTAINER'
         self.assertEqual(
-            set(opt.keys()), set(
-                ['a', 'bar', 'c', 'foo', 'e', 'xx', 'yy', 'x']))
+            set(opt.keys()), {'a', 'bar', 'c', 'foo', 'e', 'xx', 'yy', 'x'}
+        )
         self.assertEqual(
             repr(opt),
             "Container(a = None, bar = 'x', c = 'd', e = '1 2 3', foo = 1, x = Container(a = 1, b = 2), xx = 1, yy = 2)")
@@ -221,9 +220,8 @@ yy: 2""")
         if os.path.exists(".test_misc"):
             pyutilib.misc.rmtree(".test_misc")
         os.makedirs(".test_misc/a/b/c")
-        OUTPUT = open(".test_misc/a/file", "w")
-        OUTPUT.write("HERE\n")
-        OUTPUT.close()
+        with open(".test_misc/a/file", "w") as OUTPUT:
+            OUTPUT.write("HERE\n")
         pyutilib.misc.rmtree(".test_misc")
         if os.path.exists(".test_misc"):
             self.fail("test_rmtree failed to delete .test_misc dir")
@@ -234,12 +232,12 @@ yy: 2""")
         self.assertEqual(ans, None)
         path = sys.path + [currdir]
         ans = pyutilib.misc.search_file("test1.cfg", search_path=path)
-        self.assertEqual(ans, abspath(currdir + "test1.cfg"))
+        self.assertEqual(ans, abspath(f"{currdir}test1.cfg"))
         ans = pyutilib.misc.search_file("test1.cfg", search_path=currdir)
-        self.assertEqual(ans, abspath(currdir + "test1.cfg"))
+        self.assertEqual(ans, abspath(f"{currdir}test1.cfg"))
         ans = pyutilib.misc.search_file(
             "test1", implicitExt=".cfg", search_path=path)
-        self.assertEqual(ans, abspath(currdir + "test1.cfg"))
+        self.assertEqual(ans, abspath(f"{currdir}test1.cfg"))
 
     def test_search_file2(self):
         # Test that search_file works with an empty PATH environment
@@ -252,9 +250,7 @@ yy: 2""")
     def test_search_file3(self):
         # Test that search_file works with a validation function
         def validate_ls(filename):
-            if filename.endswith('ls'):
-                return False
-            return True
+            return not filename.endswith('ls')
 
         tmp = os.environ["PATH"]
         del os.environ["PATH"]
@@ -265,78 +261,94 @@ yy: 2""")
     def test_file_compare1(self):
         # Test that file comparison works
         [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-            currdir + "filecmp1.txt", currdir + "filecmp1.txt")
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp1.txt"
+        )
         if flag:
             self.fail(
                 "test_file_compare1 - found differences in filecmp1.txt at line "
                 + str(lineno))
         [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-            currdir + "filecmp1.txt", currdir + "filecmp2.txt")
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp2.txt"
+        )
         if flag:
             self.fail(
                 "test_file_compare1 - found differences between filecmp1.txt filecmp2.txt at line "
                 + str(lineno))
         [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-            currdir + "filecmp1.txt", currdir + "filecmp3.txt")
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp3.txt"
+        )
         if not flag or lineno != 4:
             self.fail("test_file_compare1 - expected difference at line 4")
         [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-            currdir + "filecmp1.txt", currdir + "filecmp4.txt")
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp4.txt"
+        )
         if not flag or lineno != 3:
             self.fail("test_file_compare1 - expected difference at line 3")
         try:
             [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-                currdir + "foo.txt", currdir + "bar.txt")
+                f"{currdir}foo.txt", f"{currdir}bar.txt"
+            )
             self.fail("test_file_compare1 - should have failed to find foo.txt")
         except IOError:
             pass
         try:
             [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-                currdir + "filecmp1.txt", currdir + "bar.txt")
+                f"{currdir}filecmp1.txt", f"{currdir}bar.txt"
+            )
             self.fail("test_file_compare1 - should have failed to find bar.txt")
         except IOError:
             pass
 
     def test_file_compare1a(self):
         # Test that file comparison works without numeric values
-        [flag, lineno, diffstr
-        ] = pyutilib.misc.compare_file_with_numeric_values(
-            currdir + "filecmp1.txt", currdir + "filecmp1.txt")
+        [flag, lineno, diffstr] = pyutilib.misc.compare_file_with_numeric_values(
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp1.txt"
+        )
         if flag:
             self.fail(
                 "test_file_compare1a - found differences in filecmp1.txt at line "
                 + str(lineno))
-        [flag, lineno, diffstr
-        ] = pyutilib.misc.compare_file_with_numeric_values(
-            currdir + "filecmp1.txt", currdir + "filecmp2.txt")
+        [flag, lineno, diffstr] = pyutilib.misc.compare_file_with_numeric_values(
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp2.txt"
+        )
         if flag:
             self.fail(
                 "test_file_compare1a - found differences between filecmp1.txt filecmp2.txt at line "
                 + str(lineno))
-        [flag, lineno, diffstr
-        ] = pyutilib.misc.compare_file_with_numeric_values(
-            currdir + "filecmp1.txt", currdir + "filecmp3.txt")
+        [flag, lineno, diffstr] = pyutilib.misc.compare_file_with_numeric_values(
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp3.txt"
+        )
         if not flag or lineno != 4:
-            self.fail("test_file_compare1a - expected difference at line 4",
-                      ", got %s, %s" % (flag, lineno))
-        [flag, lineno, diffstr
-        ] = pyutilib.misc.compare_file_with_numeric_values(
-            currdir + "filecmp1.txt", currdir + "filecmp4.txt")
+            self.fail(
+                "test_file_compare1a - expected difference at line 4",
+                f", got {flag}, {lineno}",
+            )
+        [flag, lineno, diffstr] = pyutilib.misc.compare_file_with_numeric_values(
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp4.txt"
+        )
         if not flag or lineno != 3:
             self.fail("test_file_compare1a - expected difference at line 3"
                       ", got %s, %s" % (flag, lineno))
         try:
-            [flag, lineno, diffstr
+            [
+                flag,
+                lineno,
+                diffstr,
             ] = pyutilib.misc.compare_file_with_numeric_values(
-                currdir + "foo.txt", currdir + "bar.txt")
+                f"{currdir}foo.txt", f"{currdir}bar.txt"
+            )
             self.fail(
                 "test_file_compare1a - should have failed to find foo.txt")
         except IOError:
             pass
         try:
-            [flag, lineno, diffstr
+            [
+                flag,
+                lineno,
+                diffstr,
             ] = pyutilib.misc.compare_file_with_numeric_values(
-                currdir + "filecmp1.txt", currdir + "bar.txt")
+                f"{currdir}filecmp1.txt", f"{currdir}bar.txt"
+            )
             self.fail(
                 "test_file_compare1a - should have failed to find bar.txt")
         except IOError:
@@ -345,40 +357,39 @@ yy: 2""")
     def test_file_compare1b(self):
         # Test that file comparison works with numeric values
         [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-            currdir + "filecmp6.txt", currdir + "filecmp7.txt")
+            f"{currdir}filecmp6.txt", f"{currdir}filecmp7.txt"
+        )
         if not flag:
             self.fail(
                 "test_file_compare1b - expected differences in filecmp6.txt and filecmp7.txt at line 1")
         #
         #
-        [flag, lineno, diffstr
-        ] = pyutilib.misc.compare_file_with_numeric_values(
-            currdir + "filecmp6.txt", currdir + "filecmp7.txt")
+        [flag, lineno, diffstr] = pyutilib.misc.compare_file_with_numeric_values(
+            f"{currdir}filecmp6.txt", f"{currdir}filecmp7.txt"
+        )
         if flag:
             self.fail(
                 "test_file_compare1b - unexpected differences in filecmp6.txt and filecmp7.txt at line %d"
                 % lineno)
         #
-        [flag, lineno, diffstr
-        ] = pyutilib.misc.compare_file_with_numeric_values(
-            currdir + "filecmp6.txt", currdir + "filecmp8.txt")
+        [flag, lineno, diffstr] = pyutilib.misc.compare_file_with_numeric_values(
+            f"{currdir}filecmp6.txt", f"{currdir}filecmp8.txt"
+        )
         if not flag:
             self.fail(
                 "test_file_compare1b - expected differences in filecmp6.txt and filecmp8.txt at line 1")
         #
-        [flag, lineno, diffstr
-        ] = pyutilib.misc.compare_file_with_numeric_values(
-            currdir + "filecmp6.txt", currdir + "filecmp8.txt", tolerance=1e-2)
+        [flag, lineno, diffstr] = pyutilib.misc.compare_file_with_numeric_values(
+            f"{currdir}filecmp6.txt", f"{currdir}filecmp8.txt", tolerance=1e-2
+        )
         if flag:
             self.fail(
                 "test_file_compare1b - unexpected differences in filecmp6.txt and filecmp8.txt at line %d"
                 % lineno)
         #
-        [flag, lineno, diffstr
-        ] = pyutilib.misc.compare_file_with_numeric_values(
-            currdir + "filecmp10.txt",
-            currdir + "filecmp11.txt",
-            tolerance=1e-2)
+        [flag, lineno, diffstr] = pyutilib.misc.compare_file_with_numeric_values(
+            f"{currdir}filecmp10.txt", f"{currdir}filecmp11.txt", tolerance=1e-2
+        )
         if flag:
             self.fail(
                 "test_file_compare1b - unexpected differences in filecmp10.txt and filecmp11.txt at line %d"
@@ -386,20 +397,23 @@ yy: 2""")
         #
         #
         [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-            currdir + "filecmp6.txt", currdir + "filecmp7.txt", tolerance=0.0)
+            f"{currdir}filecmp6.txt", f"{currdir}filecmp7.txt", tolerance=0.0
+        )
         if flag:
             self.fail(
                 "test_file_compare1b - unexpected differences in filecmp6.txt and filecmp7.txt at line %d"
                 % lineno)
         #
         [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-            currdir + "filecmp6.txt", currdir + "filecmp8.txt", tolerance=0.0)
+            f"{currdir}filecmp6.txt", f"{currdir}filecmp8.txt", tolerance=0.0
+        )
         if not flag:
             self.fail(
                 "test_file_compare1b - expected differences in filecmp6.txt and filecmp8.txt at line 1")
         #
         [flag, lineno, diffstr] = pyutilib.misc.compare_file(
-            currdir + "filecmp6.txt", currdir + "filecmp8.txt", tolerance=1e-2)
+            f"{currdir}filecmp6.txt", f"{currdir}filecmp8.txt", tolerance=1e-2
+        )
         if flag:
             self.fail(
                 "test_file_compare1b - unexpected differences in filecmp6.txt and filecmp8.txt at line %d"
@@ -407,37 +421,44 @@ yy: 2""")
 
     def test_file_compare2(self):
         # Test that large file comparison works
-        flag = pyutilib.misc.compare_large_file(currdir + "filecmp1.txt",
-                                                currdir + "filecmp1.txt")
+        flag = pyutilib.misc.compare_large_file(
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp1.txt"
+        )
         if flag:
             self.fail("test_file_compare2 - found differences in filecmp1.txt")
-        flag = pyutilib.misc.compare_large_file(currdir + "filecmp1.txt",
-                                                currdir + "filecmp2.txt")
+        flag = pyutilib.misc.compare_large_file(
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp2.txt"
+        )
         if flag:
             self.fail(
                 "test_file_compare2 - found differences between filecmp1.txt filecmp2.txt")
         flag = pyutilib.misc.compare_large_file(
-            currdir + "filecmp2.txt", currdir + "filecmp3.txt", bufSize=7)
+            f"{currdir}filecmp2.txt", f"{currdir}filecmp3.txt", bufSize=7
+        )
         if not flag:
             self.fail(
                 "test_file_compare2 - found differences between filecmp1.txt filecmp2.txt")
-        flag = pyutilib.misc.compare_large_file(currdir + "filecmp1.txt",
-                                                currdir + "filecmp3.txt")
+        flag = pyutilib.misc.compare_large_file(
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp3.txt"
+        )
         if not flag:
             self.fail("test_file_compare2 - expected difference")
-        flag = pyutilib.misc.compare_large_file(currdir + "filecmp1.txt",
-                                                currdir + "filecmp4.txt")
+        flag = pyutilib.misc.compare_large_file(
+            f"{currdir}filecmp1.txt", f"{currdir}filecmp4.txt"
+        )
         if not flag:
             self.fail("test_file_compare2 - expected difference")
         try:
-            flag = pyutilib.misc.compare_large_file(currdir + "foo.txt",
-                                                    currdir + "bar.txt")
+            flag = pyutilib.misc.compare_large_file(
+                f"{currdir}foo.txt", f"{currdir}bar.txt"
+            )
             self.fail("test_file_compare2 - should have failed to find foo.txt")
         except IOError:
             pass
         try:
-            flag = pyutilib.misc.compare_large_file(currdir + "filecmp1.txt",
-                                                    currdir + "bar.txt")
+            flag = pyutilib.misc.compare_large_file(
+                f"{currdir}filecmp1.txt", f"{currdir}bar.txt"
+            )
             self.fail("test_file_compare1 - should have failed to find bar.txt")
         except IOError:
             pass
@@ -452,16 +473,13 @@ yy: 2""")
         self.assertEqual(a, "bd")
 
     def test_get_desired_chars_from_file(self):
-        # Test that get_desired_chars_from_file works
-        INPUT = open(currdir + "filecmp5.txt", "r")
-        a = pyutilib.misc.comparison.get_desired_chars_from_file(INPUT, 3,
-                                                                 "b,d")
-        self.assertEqual(a, "ace")
-        INPUT.close()
-        INPUT = open(currdir + "filecmp5.txt", "r")
-        a = pyutilib.misc.comparison.get_desired_chars_from_file(INPUT, 100)
-        self.assertEqual(a, "abcde\nfghij\n")
-        INPUT.close()
+        with open(f"{currdir}filecmp5.txt", "r") as INPUT:
+            a = pyutilib.misc.comparison.get_desired_chars_from_file(INPUT, 3,
+                                                                     "b,d")
+            self.assertEqual(a, "ace")
+        with open(f"{currdir}filecmp5.txt", "r") as INPUT:
+            a = pyutilib.misc.comparison.get_desired_chars_from_file(INPUT, 100)
+            self.assertEqual(a, "abcde\nfghij\n")
 
     def test_sort_index1(self):
         # Test that sort_index returns the correct value for a sorted array
@@ -472,15 +490,13 @@ yy: 2""")
         # Test that sort_index returns an array that can be used to sort the data
         data = [4, 2, 6, 8, 1, 9, 3, 10, 7, 5]
         ans = pyutilib.misc.sort_index(data)
-        sorted = []
-        for i in range(0, len(data)):
-            sorted.append(data[ans[i]])
+        sorted = [data[ans[i]] for i in range(0, len(data))]
         data.sort()
         self.assertEqual(data, sorted)
 
     def test_create_hardlink(self):
-        orig = currdir + "import1.txt"
-        link = currdir + "import1.txt.hardlink"
+        orig = f"{currdir}import1.txt"
+        link = f"{currdir}import1.txt.hardlink"
 
         try:
             os.remove(link)

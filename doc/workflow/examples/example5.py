@@ -36,7 +36,7 @@ D = TaskD()
 # e_tasks. ultimately, the workflow should own a reference to all composite tasks.
 e_tasks = []
 
-for i in range(100):
+for _ in range(100):
     E = TaskE()
     e_tasks.append(E)
     D.inputs.x = E.outputs.Z

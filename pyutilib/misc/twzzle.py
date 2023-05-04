@@ -64,7 +64,7 @@ class TestCase(unittest.TestCase):
     def testProgress(self):
         p = progress()
         p.getStart("HERE")
-        for a in range(0, 10, 1):
+        for _ in range(0, 10, 1):
             p.moveOn()
             time.sleep(0.2)
 

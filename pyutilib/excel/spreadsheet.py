@@ -80,16 +80,15 @@ class ExcelSpreadsheet(ExcelSpreadsheet_base):
                 if interfaces[interface].available:
                     ctype = interface
                     break
-            if not ctype:
-                raise RuntimeError("No excel interface (from %s) available"
-                                   % (interfaces.options,))
+        if not ctype:
+            raise RuntimeError(f"No excel interface (from {interfaces.options}) available")
 
         if ctype not in interfaces.options:
             raise RuntimeError(
-                "Excel interface %s not in known interfaces (%s)"
-                % (ctype, interfaces.options,))
+                f"Excel interface {ctype} not in known interfaces ({interfaces.options})"
+            )
 
         if not interfaces[ctype].available:
-            raise ImportError("Excel interface %s is not available" % (ctype,))
+            raise ImportError(f"Excel interface {ctype} is not available")
 
         return interfaces[ctype].module(*args, **kwds)

@@ -34,9 +34,9 @@ class ExcelDocument(object):
 
     def __init__(self, filename):
         self.connection = win32com.client.Dispatch('ADODB.Connection')
-        self.connection.Open('PROVIDER=Microsoft.Jet.OLEDB.4.0;' +
-                             'DATA SOURCE=%s' % filename +
-                             ';Extended Properties="Excel 8.0;HDR=1;IMEX=1"')
+        self.connection.Open(
+            f'PROVIDER=Microsoft.Jet.OLEDB.4.0;DATA SOURCE={filename};Extended Properties="Excel 8.0;HDR=1;IMEX=1"'
+        )
 
     def sheets(self):
         """ Returns a list of the name of the sheets found in the document.
@@ -96,16 +96,10 @@ class _ExcelSheet(object):
             def encoder(value):
                 if isinstance(value, unicode):
                     value = value.strip()
-                    if len(value) == 0:
-                        return None
-                    else:
-                        return value.encode(encoding)
+                    return None if len(value) == 0 else value.encode(encoding)
                 elif isinstance(value, str):
                     value = value.strip()
-                    if len(value) == 0:
-                        return None
-                    else:
-                        return value
+                    return None if len(value) == 0 else value
                 else:
                     return value
 
@@ -118,8 +112,8 @@ class _ExcelSheet(object):
         """
         recordset = win32com.client.Dispatch('ADODB.Recordset')
         recordset.Open(
-            unicode('SELECT * FROM [%s]' % self.name), self.document.connection,
-            0, 1)
+            unicode(f'SELECT * FROM [{self.name}]'), self.document.connection, 0, 1
+        )
         try:
             return [self.encoding(field.Name) for field in recordset.Fields]
         finally:
@@ -139,19 +133,24 @@ class _ExcelSheet(object):
         recordset = win32com.client.Dispatch('ADODB.Recordset')
         if self.order_by:
             recordset.Open(
-                unicode('SELECT * FROM [%s] ORDER BY %s' % (
-                    self.name, self.order_by)), self.document.connection, 0, 1)
+                unicode(f'SELECT * FROM [{self.name}] ORDER BY {self.order_by}'),
+                self.document.connection,
+                0,
+                1,
+            )
         else:
             recordset.Open(
-                unicode('SELECT * FROM [%s]' % self.name),
-                self.document.connection, 0, 1)
+                unicode(f'SELECT * FROM [{self.name}]'),
+                self.document.connection,
+                0,
+                1,
+            )
         try:
             while not recordset.EOF:
-                source = {}
-                for field in recordset.Fields:
-                    source[self.encoding(field.Name)] = self.encoding(
-                        field.Value)
-                yield source
+                yield {
+                    self.encoding(field.Name): self.encoding(field.Value)
+                    for field in recordset.Fields
+                }
                 recordset.MoveNext()
             recordset.Close()
             del recordset
@@ -175,12 +174,18 @@ class _ExcelSheet(object):
         recordset = win32com.client.Dispatch('ADODB.Recordset')
         if self.order_by:
             recordset.Open(
-                unicode('SELECT * FROM [%s] ORDER BY %s' % (
-                    self.name, self.order_by)), self.document.connection, 0, 1)
+                unicode(f'SELECT * FROM [{self.name}] ORDER BY {self.order_by}'),
+                self.document.connection,
+                0,
+                1,
+            )
         else:
             recordset.Open(
-                unicode('SELECT * FROM [%s]' % self.name),
-                self.document.connection, 0, 1)
+                unicode(f'SELECT * FROM [{self.name}]'),
+                self.document.connection,
+                0,
+                1,
+            )
         try:
             fields = [self.encoding(field.Name) for field in recordset.Fields]
             ok = True

@@ -44,14 +44,7 @@ class TestData(Plugin):
     datakeys = set()
 
     def _timeTaken(self):
-        if hasattr(self, '_timer'):
-            taken = time() - self._timer
-        else:
-            # test died before it ran (probably error in setup())
-            # or success/failure added before test started probably
-            # due to custom TestResult munging
-            taken = 0.0
-        return taken
+        return time() - self._timer if hasattr(self, '_timer') else 0.0
 
     def _quoteattr(self, attr):
         """Escape a CSV attribute. Value can be unicode."""
@@ -87,21 +80,16 @@ class TestData(Plugin):
         Plugin.configure(self, options, config)
         self.config = config
         self.reportdata = []
-        if options.testdata_table:
-            self.format = 'table'
-        else:
-            self.format = 'sparse'
+        self.format = 'table' if options.testdata_table else 'sparse'
         if self.enabled:
             self.report_file = open(options.testdata_file, 'w')
             self.datakeys.add('time')
 
     def report(self, stream):
         """Writes a CSV file with test data. """
-        if not os.environ.get('HUDSON_URL', None) is None:
+        if os.environ.get('HUDSON_URL', None) is not None:
             colprefix = 'job,build,node,'
-            prefix = "%s,%s,%s," % (os.environ['JOB_NAME'],
-                                    os.environ['BUILD_NUMBER'],
-                                    os.environ['NODE_NAME'])
+            prefix = f"{os.environ['JOB_NAME']},{os.environ['BUILD_NUMBER']},{os.environ['NODE_NAME']},"
         else:
             colprefix = ''
             prefix = ''
@@ -110,9 +98,7 @@ class TestData(Plugin):
             self.report_file.write(colprefix + ','.join(
                 map(self._quoteattr, keys)) + '\n')
             for data in self.reportdata:
-                tmp = []
-                for key in keys:
-                    tmp.append(str(data[2].get(key, '')))
+                tmp = [str(data[2].get(key, '')) for key in keys]
                 self.report_file.write(prefix + ','.join(tmp) + '\n')
             self.report_file.close()
         else:
@@ -121,14 +107,13 @@ class TestData(Plugin):
             for data in self.reportdata:
                 for key in data[2]:
                     self.report_file.write(prefix)
-                    self.report_file.write(str(data[0]) + ',' + str(data[1]))
-                    self.report_file.write(',' + str(key) + ',' + str(data[2][
-                        key]))
+                    self.report_file.write(f'{str(data[0])},{str(data[1])}')
+                    self.report_file.write(f',{str(key)},{str(data[2][key])}')
                     self.report_file.write('\n')
 
         if self.config.verbosity > 1:
             stream.writeln("-" * 70)
-            stream.writeln("CSV: %s" % self.report_file.name)
+            stream.writeln(f"CSV: {self.report_file.name}")
 
     def startTest(self, test):
         """Initializes a timer before starting a test."""

@@ -12,9 +12,9 @@ class NumTypesDebug(unittest.TestCase):
 
     def test_infinity1(self):
         # Check that infinity is defined appropriately
-        if 1 > pyutilib.math.infinity:
+        if pyutilib.math.infinity < 1:
             self.fail("test_infinity")
-        if not ((1.0 / pyutilib.math.infinity) == 0.0):
+        if 1.0 / pyutilib.math.infinity != 0.0:
             self.fail("test_infinity - 1/infinity is not zero")
         if pyutilib.math.is_finite(pyutilib.math.infinity):
             self.fail("test_infinity - infinity is finite")
@@ -29,7 +29,7 @@ class NumTypesDebug(unittest.TestCase):
 
     def test_nan(self):
         # Check that nan is defined appropriately
-        if not type(pyutilib.math.nan) is type(1.0):
+        if type(pyutilib.math.nan) is not type(1.0):
             self.fail("test_nan")
         if not pyutilib.math.is_nan(pyutilib.math.infinity /
                                     pyutilib.math.infinity):

@@ -22,12 +22,10 @@ else:
         self.add_resource(pyutilib.workflow.ExecutableResource('ls'))
 
     def execute(self):
-        self.resource('ls').run(self.dir, logfile=currdir+'logfile')
+        self.resource('ls').run(self.dir, logfile=f'{currdir}logfile')
         self.list = []
-        INPUT = open(currdir+'logfile','r')
-        for line in INPUT:
-            self.list.append( line.strip() )
-        INPUT.close()
+        with open(f'{currdir}logfile', 'r') as INPUT:
+            self.list.extend(line.strip() for line in INPUT)
         self.list.sort()
 
   H = TaskH()

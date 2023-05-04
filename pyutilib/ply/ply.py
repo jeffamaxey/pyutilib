@@ -38,7 +38,6 @@ t_ignore = " \t\r"
 # Discard comments
 def t_COMMENT(t):
     r'\#[^\n]*'
-    pass
 # Tokens in comments are discarded.
 
 
@@ -52,20 +51,15 @@ def _find_column(input, token):
     while i > 0:
         if input[i] == '\n': break
         i -= 1
-    column = (token.lexpos - i) + 1
-    return column
+    return (token.lexpos - i) + 1
 
 
 def p_error(p):
     if p is None:
         tmp = "Syntax error at end of file."
     else:
-        tmp = "Syntax error at token "
-        if p.type == "":
-            tmp = tmp + "''"
-        else:
-            tmp = tmp + str(p.type)
-        tmp = tmp + " with value '" + str(p.value) + "'"
-        tmp = tmp + " in line " + str(p.lineno)
-        tmp = tmp + " at column " + str(_find_column(_parsedata, p))
+        tmp = "Syntax error at token " + ("''" if p.type == "" else str(p.type))
+        tmp = f"{tmp} with value '{str(p.value)}'"
+        tmp = f"{tmp} in line {str(p.lineno)}"
+        tmp = f"{tmp} at column {str(_find_column(_parsedata, p))}"
     raise IOError(tmp)
